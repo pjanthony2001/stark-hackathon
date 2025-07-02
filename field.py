@@ -18,26 +18,35 @@ class FieldElement :
         return f'{self.value}'
 
     def __add__(self, b : 'FieldElement') -> 'FieldElement' :
-        assert self.field == b.field
-        return self.field.add(self, b)
+        try :
+            return self.field.add(self, b)
+        except Exception as e :
+            print (e)
     
     def __sub__(self, b : 'FieldElement') -> 'FieldElement' :
-        assert self.field == b.field
-        return self.field.sub(self, b)
+        try :
+            return self.field.sub(self, b)
+        except Exception as e :
+            print (e)
     
     def __mul__(self, b : 'FieldElement') -> 'FieldElement' :
-        assert self.field == b.field
-        return self.field.mul(self, b)
+        try :
+            return self.field.mul(self, b)
+        except Exception as e :
+            print (e)
 
     def __power__(self, exp : 'int') -> 'FieldElement' :
-        assert exp >= 0
-        return self.field.power(self, exp)
-    
+        try :
+            return self.field.power(self, exp)
+        except Exception as e :
+            print (e)
+
     def __truediv__(self, b : 'FieldElement') -> 'FieldElement' :
-        assert self.field == b.field
-        assert not b.is_zero()
-        return self.field.truediv(self)
-    
+        try :
+            return self.field.truediv(self)
+        except Exception as e :
+            print (e)
+
     def __neg__(self) -> 'FieldElement' :
         return FieldElement(self.field, -self.value)
     
@@ -45,7 +54,7 @@ class FieldElement :
         return 1/self
     
     def is_zero(self) -> 'bool' :
-        return self == 0
+        return self.value == 0
 
 class Field :
 
@@ -57,6 +66,9 @@ class Field :
     def __eq__(self, field2 : 'Field') :
         return self.p == field2.p
     
+    def __neq__(self, field2 : 'Field') :
+        return self.p != field2.p
+    
     def __repr__(self):
         return f'Z/{self.p}Z'
     
@@ -64,12 +76,18 @@ class Field :
         return value % self.p
 
     def add(self, a : 'FieldElement', b : 'FieldElement') -> 'FieldElement' :
+        if a.field != b.field :
+            raise Exception('Operations between terms from different fields are prohibited.')
         return FieldElement((a.value + b.value) % self.p)
     
     def sub(self, a : 'FieldElement', b : 'FieldElement') -> 'FieldElement' :
+        if a.field != b.field :
+            raise Exception('Operations between terms from different fields are prohibited.')
         return FieldElement((a.value - b.value) % self.p)
 
     def mul(self, a : 'FieldElement', b : 'FieldElement') -> 'FieldElement' :
+        if a.field != b.field :
+            raise Exception('Operations between terms from different fields are prohibited.')
         return FieldElement((a.value*b.value) % self.p)
     
     def power(self, a : 'FieldElement', exp : 'int') -> 'FieldElement' :
@@ -79,8 +97,27 @@ class Field :
         return self.power(b, exp//2 + exp%2) 
 
     def truediv(self, a : 'FieldElement', b : 'FieldElement') -> 'FieldElement' :
+        if a.field != b.field :
+            raise Exception('Operations between terms from different fields are prohibited.')
+        if b.is_zero() :
+            raise Exception('Division by zero.')
         return FieldElement((b.value * a.value**(self.p-1)) % self.p)
     
     def repr_element(self, a : 'FieldElement') -> 'str' :
         return f'{a.value} in {self}'
-
+    
+    def generator(self):
+        assert(self.p == 1 + 407 * ( 1 << 119 )), "Do not know generator for other fields beyond 1+407*2^119"
+        return FieldElement(85408008396924667383611388730472331217, self)
+        
+    def primitive_nth_root(self, n):
+        if self.p == 1 + 407 * ( 1 << 119 ):
+            assert(n <= 1 << 119 and (n & (n-1)) == 0), "Field does not have nth root of unity where n > 2^119 or not power of two."
+            root = FieldElement(85408008396924667383611388730472331217, self)
+            order = 1 << 119
+            while order != n:
+                root = root^2
+                order = order/2
+            return root
+        else:
+            assert(False), "Unknown field, can't return root of unity."

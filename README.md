@@ -1,1 +1,1 @@
-# stark-hackathon
+# stark-hackathonpip install UV

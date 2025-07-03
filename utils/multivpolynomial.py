@@ -17,3 +17,6 @@ class MultiVPolynomial :
                 mon_val *= ant[k]**mon[k]
             value += mon_val
         return value
+    
+    def __add__(self, b : 'MultiVPolynomial') :
+        pass

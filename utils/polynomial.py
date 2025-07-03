@@ -1,9 +1,9 @@
-from field import FieldElement, Field
+from utils.field import FieldElement, Field
 
 class Polynomial :
     def __init__(self, coef : 'list[FieldElement]'):
         if len(coef) == 0 :
-            raise Exception('Polynomials must have at leats 1 coefficient.')
+            raise Exception('Polynomials must have at least 1 coefficient.')
         if not FieldElement.field_eq(coef) :
             raise Exception('Coefficients of the polynomial have to belong to the same field.')
         self.coef = coef
@@ -11,7 +11,7 @@ class Polynomial :
 
     def deg(self) -> 'int':
         n = len(self.coef)-1
-        while self.coef[n].value == 0 :
+        while n >= 0 and self.coef[n].value == 0 :
             n -= 1
         return n
 
@@ -26,14 +26,15 @@ class Polynomial :
             return '0'
         poly = ''
         for index, coef in enumerate(self.coef) :
-            if index == 0 and coef.value != 0 :
-                poly = poly + f'{coef.value}'
-            if len(poly) != 0 :
-                poly = poly + ' + '
-            if coef.value == 1 :
-                poly = poly + f'X^{index}'
-            elif coef.value != 0 :
-                poly = poly + f'{coef.value}*X^{index}'
+            if coef.value != 0 :
+                if len(poly) != 0 :
+                    poly = poly + ' + '
+                if index == 0 :
+                    poly = poly + f'{coef.value}'
+                elif coef.value == 1 :
+                    poly = poly + f'X^{index}'
+                else:
+                    poly = poly + f'{coef.value}*X^{index}'
         return poly
 
     @staticmethod
@@ -41,10 +42,12 @@ class Polynomial :
         if a.field != b.field :
             raise Exception('It makes no sense to synchronise two polynomials with coefficients from different fields.')
         d = max(a.deg(), b.deg())
+        a.coef = a.coef[:a.deg() + 1]
+        b.coef = b.coef[:b.deg() + 1]
         if len(a.coef) <= d :
-            a.coef = a.coef + (d+1-len(a.coef))*[FieldElement(a.field, 0)]
+            a.coef = a.coef + (d + 1 - len(a.coef))*[FieldElement(a.field, 0)]
         if len(b.coef) <= d :
-            b.coef = b.coef + (d+1-len(b.coef))*[FieldElement(b.field, 0)]
+            b.coef = b.coef + (d + 1 - len(b.coef))*[FieldElement(b.field, 0)]
         return d
 
     def __eq__(self, b : 'Polynomial') -> 'bool':
@@ -62,7 +65,9 @@ class Polynomial :
     def __add__(self, b : 'Polynomial|FieldElement') -> 'Polynomial' :
         if isinstance(b, FieldElement) :
             b = Polynomial([b])
-        if isinstance(b, Polynomial) : 
+        if isinstance(b, Polynomial) :
+            if b.is_zero() :
+                return self
             d = Polynomial.synchro(self, b)
             return Polynomial([self.coef[i] + b.coef[i] for i in range(d+1)])
         else :
@@ -91,9 +96,10 @@ class Polynomial :
         if isinstance(b, Polynomial) :
             try :
                 d = Polynomial.synchro(self,  b)
+                if self.deg()== -1 or b.deg() == -1 :
+                    return Polynomial.zero(self.field)
                 prod_coef = []
-                if self.deg()*b.deg() == 0 :
-                    prod_deg = max(self.deg(), b.deg())
+                prod_deg = self.deg() + b.deg()
                 for k in range(prod_deg + 1) :
                     coef = FieldElement(self.field, 0)
                     for i in range(max(k-d, 0), min(d, k) + 1) :
@@ -111,8 +117,12 @@ class Polynomial :
     def __pow__(self, exp : 'int') -> 'Polynomial':
         if exp == 0 :
             return Polynomial.one(self.field)
-        return self*self.__pow__(exp-1)
-    
+        # return self*self.__pow__(exp-1)
+        res = self
+        for k in range(exp - 1) :
+            res *= self
+        return res
+
     @classmethod
     def X(cls, field : Field) :
         return cls([field.zero, field.one])
@@ -123,11 +133,14 @@ class Polynomial :
                 raise Exception('The polynomial and its argument must belonbe linked to the same field.')
             comp = Polynomial.zero(self.field)
             for index, coef in enumerate(self.coef) :
-                comp += coef*(arg**index)
+                comp = comp + coef*(arg**index)
             return comp
         if isinstance(arg, FieldElement) :
-            value = 0
+            if self.field != arg.field :
+                raise Exception('The polynomial and its argument must belonbe linked to the same field.')
+            value = self.field.zero
             for index, coef in enumerate(self.coef) :
+                print(index)
                 value += coef*(arg**index)
             return value
         else :

@@ -108,10 +108,12 @@ class Field :
         return FieldElement(self, (a.value*b.value) % self.p)
     
     def power(self, a : 'FieldElement', exp : 'int') -> 'FieldElement' :
+        if exp == 0 :
+            return self.one
         if exp == 1 :
             return a
         b = FieldElement(self, (a.value**2) % self.p)
-        return self.power(b, exp//2 + exp%2) 
+        return self.power(b, exp//2)*self.power(a, exp%2)
 
     def truediv(self, a : 'FieldElement', b : 'FieldElement') -> 'FieldElement' :
         if a.field != b.field :

@@ -5,7 +5,7 @@ class Polynomial :
         if len(coef) == 0 :
             raise Exception('Polynomials must have at least 1 coefficient.')
         if not FieldElement.field_eq(coef) :
-            raise Exception('Coefficients of the polynomial have to belong to the same field.')
+            raise Exception('Coefficients of the polynomial must belong to the same field.')
         self.coef = coef
         self.field = self.coef[0].field
 
@@ -28,13 +28,13 @@ class Polynomial :
         for index, coef in enumerate(self.coef) :
             if coef.value != 0 :
                 if len(poly) != 0 :
-                    poly = poly + ' + '
+                    poly += ' + '
                 if index == 0 :
-                    poly = poly + f'{coef.value}'
+                    poly += f'{coef.value}'
                 elif coef.value == 1 :
-                    poly = poly + f'X^{index}'
+                    poly += f'X^{index}'
                 else:
-                    poly = poly + f'{coef.value}*X^{index}'
+                    poly += f'{coef.value}*X^{index}'
         return poly
 
     @staticmethod
@@ -66,6 +66,8 @@ class Polynomial :
         if isinstance(b, FieldElement) :
             b = Polynomial([b])
         if isinstance(b, Polynomial) :
+            if b.field != self.field :
+                raise Exception('Impossible to sum multivariate polynomials linked to different fields.')
             if b.is_zero() :
                 return self
             d = Polynomial.synchro(self, b)
@@ -140,7 +142,6 @@ class Polynomial :
                 raise Exception('The polynomial and its argument must belonbe linked to the same field.')
             value = self.field.zero
             for index, coef in enumerate(self.coef) :
-                print(index)
                 value += coef*(arg**index)
             return value
         else :

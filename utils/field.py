@@ -142,6 +142,6 @@ class Field :
             assert(False), "Unknown field, can't return root of unity."
     
     @classmethod
-    def main():
+    def main(cls):
         p = 1 + 407 * ( 1 << 119 ) # 1 + 11 * 37 * 2^119
-        return Field(p)
+        return cls(p)

@@ -92,7 +92,8 @@ class Polynomial :
             try :
                 d = Polynomial.synchro(self,  b)
                 prod_coef = []
-                prod_deg = self.deg() + b.deg()
+                if self.deg()*b.deg() == 0 :
+                    prod_deg = max(self.deg(), b.deg())
                 for k in range(prod_deg + 1) :
                     coef = FieldElement(self.field, 0)
                     for i in range(max(k-d, 0), min(d, k) + 1) :

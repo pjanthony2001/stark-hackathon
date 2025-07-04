@@ -7,9 +7,6 @@ class FieldElement :
     
     def __eq__(self, b : 'FieldElement'):
         return self.field == b.field * self.value == b.value
-    
-    def __neq__(self, b : 'FieldElement'):
-        return 1 - self.__eq__(b)
 
     def __repr__(self):
         return self.field.repr_element(self)
@@ -46,7 +43,7 @@ class FieldElement :
 
     def __pow__(self, exp : 'int') -> 'FieldElement' :
         try :
-            return self.field.power(self, exp)
+            return self.field.pow(self, exp)
         except Exception as e :
             print (e)
 
@@ -58,9 +55,6 @@ class FieldElement :
 
     def __neg__(self) -> 'FieldElement' :
         return FieldElement(self.field, -self.value)
-    
-    def inverse(self) -> 'FieldElement' :
-        return 1/self
     
     def is_zero(self) -> 'bool' :
         return self.value == 0
@@ -107,20 +101,25 @@ class Field :
             raise Exception('Operations between terms from different fields are prohibited.')
         return FieldElement(self, (a.value*b.value) % self.p)
     
-    def power(self, a : 'FieldElement', exp : 'int') -> 'FieldElement' :
+    def pow(self, a : 'FieldElement', exp : 'int') -> 'FieldElement' :
+        if exp == -1 :
+            return self.inv(a)
         if exp == 0 :
             return self.one
         if exp == 1 :
             return a
         b = FieldElement(self, (a.value**2) % self.p)
-        return self.power(b, exp//2)*self.power(a, exp%2)
+        return self.pow(b, exp//2)*self.pow(a, exp%2)
+
+    def inv(self, a : 'FieldElement') -> 'FieldElement' :
+        return a**(self.p-2)
 
     def truediv(self, a : 'FieldElement', b : 'FieldElement') -> 'FieldElement' :
         if a.field != b.field :
             raise Exception('Operations between terms from different fields are prohibited.')
         if b.is_zero() :
             raise Exception('Division by zero.')
-        return FieldElement(self, (b.value * a.value**(self.p-1)) % self.p)
+        return self.mul(a, self.inv(b))
     
     def repr_element(self, a : 'FieldElement') -> 'str' :
         return f'{a.value} in {self}'

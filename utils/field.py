@@ -145,3 +145,9 @@ class Field :
     def main(cls):
         p = 1 + 407 * ( 1 << 119 ) # 1 + 11 * 37 * 2^119
         return cls(p)
+
+
+class MainFieldElement(FieldElement):
+    def __init__(self, p: int):
+        super().__init__(Field.main(), p)
+        

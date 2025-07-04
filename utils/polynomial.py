@@ -168,6 +168,6 @@ class Polynomial :
             product = Polynomial(y[i])
             for j in range (n) :
                 if j != i :
-                    product = (Polynomial.X(x[0].field) - Polynomial([x[j]]))/(x[i] - x[j])
+                    product *= (Polynomial.X(x[0].field) - Polynomial([x[j]]))/(x[i] - x[j])
             P += product
         return P

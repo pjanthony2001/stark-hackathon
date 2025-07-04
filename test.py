@@ -38,9 +38,9 @@ print(f'P(3) = {P(FieldElement(f, 3))} [11]')
 # for exp in range(20) :
 #     print(f'{a}**{exp} = {a**exp} [11]')
 
-d1 = {'a' : 1, 'b' : 2}
-d2 = {'b' : 2, 'a' : 1}
-print(d1 == d2)
-s = ''
-s += 'a'
-print(s)
+# d1 = {'a' : 1, 'b' : 2}
+# d2 = {'b' : 2, 'a' : 1}
+# print(d1 == d2)
+# s = ''
+# s += 'a'
+# print(s)

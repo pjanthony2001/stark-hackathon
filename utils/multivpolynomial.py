@@ -33,6 +33,8 @@ class MultiVPolynomial :
             for exp in b.exp :
                 if b.coef[exp] == 0 :
                     del b.coef[exp]
+        a.var_recalibration()
+        b.var_recalibration()
         if a.var < b.var :
             for exp in a.exp :
                 a.coef[exp] += (b.var - a.var)*[0]
@@ -50,8 +52,12 @@ class MultiVPolynomial :
                     if exp[i] != 0 :
                         non_zero[i] = 1
         while len(non_zero) > 0 and non_zero[-1] == 0 :
-            for i in range(self.exp) :
-                self.coef[]= exp
+            for exp in self.exp :
+                value = self.coef[exp]
+                del self.coef[exp]
+                self.coef[exp[:-1]] = value
+        self.actu()
+
 
     def actu(self) -> None :
         self.var = len(self.coef[0])
@@ -96,6 +102,8 @@ class MultiVPolynomial :
     def __add__(self, b : 'MultiVPolynomial') -> 'MultiVPolynomial':
         if not isinstance(b, MultiVPolynomial) :
             raise TypeError('A multivariate polynomial can only be summed with multivariate polynomials.')
+        self.actu()
+        b.actu()
         if b.var != self.var :
             raise Exception('Impossible to sum multivariate polynomials with different number of variables.')
         if b.field != self.field :
@@ -126,6 +134,9 @@ class MultiVPolynomial :
             b = MultiVPolynomial(coef_b)
         if not isinstance(b, MultiVPolynomial) :
             raise TypeError('A multivariate polynomial can only be multiplied with multivariate polynomials.')
+        self.actu()
+        b.actu()
+        MultiVPolynomial.synchro(self, b)
         if b.var != self.var :
             raise Exception('Impossible to multiply multivariate polynomials with different number of variables.')
         if b.field != self.field :
@@ -161,6 +172,7 @@ class MultiVPolynomial :
         return MultiVPolynomial({var*[0] : FieldElement(field, 0)})
     
     def is_zero(self) -> 'bool' :
+        self.actu()
         zero = FieldElement(self.field, 0)
         for exp in self.exp :
             if self.coef[exp] != 0 :
@@ -172,15 +184,24 @@ class MultiVPolynomial :
         return MultiVPolynomial({(n - 1)*[0] + [1] : FieldElement(field, 1)})
 
     @staticmethod
-    def interpolate(exps : 'list[list[int]]', y : 'list[FieldElement]') :
-        if len(x) != len(y) :
-            raise Exception('Abscissas and ordinates lists must have the same length')
-        P = MultiVPolynomial.zero()
+    def interpolate(x : 'list[list[FieldElement]]', y : 'list[FieldElement]') :
         n = len(x)
+        if n == 0 :
+            raise Exception('Impossible to interpolate from an empty list of abscissas.')
+        if len(y) != n :
+            raise Exception('Abscissas and ordinates lists must have the same length.')
+        list_x = []
+        for var_list in x :
+            list_x += var_list 
+        if not FieldElement.field_eq(list_x + y) :
+            raise Exception('Abscissas and ordinates lists must belong to the same field.')
+        P = MultiVPolynomial.zero()
+        var = len(x)
         for i in range(n) :
-            product = MultiVPolynomial(y[i])
+            product = MultiVPolynomial({var*[0] : y[i]})
             for j in range (n) :
-                if j != i :
-                    product = MultiVPolynomial.scalar_div(Polynomial.X - Polynomial([x[j]]), x[i] - x[j])
+                for k in range(var) :
+                    if j != i :
+                        product *= (MultiVPolynomial.X(k) - x[j][k])/(x[i][k] - x[j][k])
             P += product
         return P

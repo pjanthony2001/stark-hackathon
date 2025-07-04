@@ -4,7 +4,8 @@ class Matrix():
     
     def __init__(self, m: int, n: int, values: list[FieldElement]):
         assert len(values) == m * n
-        
+        assert FieldElement.field_eq(self.values)
+
         self.dimensions = (m, n)
         self.rows = m
         self.columns = n

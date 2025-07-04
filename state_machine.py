@@ -1,5 +1,4 @@
 import numpy as np
-type(np.array([[]]))
 
 
 # +
@@ -41,12 +40,6 @@ def polynome_j(j:int, x:np.ndarray, y:np.ndarray, M:np.ndarray)->float:
         Aj=A[j]
         P=P-np.dot(Aj,(x**i))
     return P
-
-
 # -
-
-polynome_j_degree1(1,np.array([1,2,8]),np.array([0,8,7]),np.array([[1,4,5],[1,2,9],[4,5,2]]))
-
-
 
 

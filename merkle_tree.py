@@ -85,7 +85,7 @@ class BinaryTree:
             else:
                 curr_val = combine(curr_val, sibling.get_val())
         return curr_val
-    
+
 class MerkleTree:
     def __init__(self, leaves : 'list', hash: 'function') -> 'MerkleTree':
         self.n = len(leaves)
@@ -112,5 +112,5 @@ if __name__ == '__main__':
     
     path_test([1, 2, 3, 4, 5, 6], combine_int)
     path_test(['a', 'b', 'c', 'd', 'e', 'f'], combine_str)        
-            
+
     

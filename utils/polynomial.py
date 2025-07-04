@@ -147,11 +147,11 @@ class Polynomial :
 
 
     @staticmethod
-    def zero(field) -> 'Polynomial' :
+    def zero(field : 'Field') -> 'Polynomial' :
         return Polynomial([FieldElement(field, 0)])
     
     @staticmethod
-    def one(field) -> 'Polynomial' :
+    def one(field : 'Field') -> 'Polynomial' :
         return Polynomial([FieldElement(field, 1)])
 
     @staticmethod
@@ -163,9 +163,9 @@ class Polynomial :
             raise Exception('Abscissas and ordinates lists must have the same length.')
         if not FieldElement.field_eq(x+y) :
             raise Exception('Abscissas and ordinates lists must belong to the same field.')
-        P = Polynomial.zero()
+        P = Polynomial.zero(x[0].field)
         for i in range(n) :
-            product = Polynomial(y[i])
+            product = Polynomial([y[i]])
             for j in range (n) :
                 if j != i :
                     product *= (Polynomial.X(x[0].field) - Polynomial([x[j]]))/(x[i] - x[j])

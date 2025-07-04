@@ -42,4 +42,10 @@ class Matrix():
     def __sub__(self, right: 'Matrix'):
         assert self.dimensions == right.dimensions
         return self.__add__(right.__rmul__( FieldElement(Field.main(),-1) ))
- 
+
+    def transpose(self):
+        values = []
+        for j in range(self.columns):
+            for i in range(self.rows):
+                values.append( self.values[i * self.columns + j] )
+        return Matrix(self.columns, self.rows, values)

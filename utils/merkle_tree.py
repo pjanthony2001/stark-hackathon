@@ -1,47 +1,60 @@
-class Node:
-    def __init__(self, left: 'Node', right: 'Node', value: 'any') -> 'Node':
-        self.value: 'any' = value
-        self.left: 'Node' = left
-        self.right: 'Node' = right
-        self.parent: 'Node' = None
+from typing import Self
+from typing import Callable, List, Tuple, Optional
+from typing import TypeVar, Generic
 
-    def get_val(self) -> 'Node':
+
+T = TypeVar('T')
+
+class Node(Generic[T]):
+    def __init__(self, left: Optional['Node'], right: Optional['Node'], value: T):
+        self.value: 'T' = value
+        self.left: Optional['Node'] = left
+        self.right: Optional['Node'] = right
+        self.parent: Optional['Node'] = None
+
+    def get_val(self) -> 'T':
         return self.value
     
-    def get_left(self) -> 'Node':
+    def get_left(self) -> Optional['Node']:
         return self.left
     
-    def get_right(self) -> 'Node':
+    def get_right(self) -> Optional['Node']:
         return self.right
     
-    def set_parent(self, parent :'Node') -> 'Node':
+    def set_parent(self, parent :'Node[T]'):
         self.parent = parent
     
     def get_sibling(self) -> 'tuple[bool, Node]':
-        if self.parent != None:
-            return self.parent.get_other_child(self) # right sibling if False, left sibling if True
+        if self.parent == None:
+            raise ValueError("Cannot get sibling of root node")
+        return self.parent.get_other_child(self) # right sibling if False, left sibling if True
+        
         
     def get_other_child(self, child: 'Node') -> 'tuple[bool, Node]':
+        if self.left is None or self.right is None:
+            raise ValueError("Cannot get sibling of a leaf node")
+        
         if self.left == child:
             return (False, self.right) # right child if False, left child if True
         return (True, self.left)
 
 
-class Leaf(Node):
-    def __init__(self, value: 'any') -> 'Leaf':
+class Leaf(Node[T]):
+    def __init__(self, value: 'T'):
         super().__init__(None, None, value)
 
 
 
-class BinaryTree:
-    def __init__(self, leaves: 'list[any]', combine: 'function') -> 'BinaryTree':
+
+class BinaryTree(Generic[T]):
+    def __init__(self, leaves: list[T], combine: Callable[[T, T], T]):
         self.n: 'int' = len(leaves)
         self.leaves: 'list[Node]' = [Leaf(value) for value in leaves]
-        self.combine: 'function' = combine
+        self.combine: Callable = combine
         self.root: 'Node' = BinaryTree.construct_tree(self.leaves.copy(), combine)
 
-    
-    def construct_tree(leaves: 'list[Node]', combine: 'function') -> 'Node':
+    @staticmethod
+    def construct_tree(leaves: 'list[Node]', combine: Callable[[T, T], T]) -> Node:
         # I like the iterative version, but teach Come the recursive version as well
         
         if len(leaves) == 0:
@@ -77,7 +90,8 @@ class BinaryTree:
             node = node.parent
         return path
         
-    def recombine_path(leaf_val: 'any', path: 'list[tuple[bool, Node]]', combine) -> 'any':
+    @staticmethod
+    def recombine_path(leaf_val: T, path: 'list[tuple[bool, Node]]', combine: Callable[[T, T], T]) -> T:
         curr_val = leaf_val
         for is_left, sibling in path:
             if is_left:
@@ -86,10 +100,21 @@ class BinaryTree:
                 curr_val = combine(curr_val, sibling.get_val())
         return curr_val
 
-class MerkleTree:
-    def __init__(self, leaves : 'list', hash: 'function') -> 'MerkleTree':
+class MerkleTree(Generic[T]):
+    def __init__(self, leaves : 'list', hash: Callable[[T, T], T]):
         self.n = len(leaves)
         self.tree = BinaryTree(leaves, hash)
+        self.leaves = self.tree.leaves
+    
+    
+    def get_root(self) -> Node[T]:
+        return self.tree.get_root()
+    
+    def get_sibling_path_to_root(self, leaf_index: int) -> 'list[tuple[bool, T]]':
+        return list(map(lambda x: (x[0], x[1].value), self.tree.get_sibling_path_to_root(self.leaves[leaf_index])))
+    
+    
+
 
 
 

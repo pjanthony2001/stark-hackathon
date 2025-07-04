@@ -15,6 +15,7 @@ def account() :
 
 from utils.polynomial import Polynomial
 from utils.field import FieldElement, Field
+from utils.multivpolynomial import MultiVPolynomial
 
 f = Field(11)
 P = Polynomial([FieldElement(f, 0), FieldElement(f, 1), FieldElement(f, 2)])
@@ -44,3 +45,31 @@ print(f'P(3) = {P(FieldElement(f, 3))} [11]')
 # s = ''
 # s += 'a'
 # print(s)
+
+zero = FieldElement(f, 0)
+one = FieldElement(f, 1)
+two = FieldElement(f, 2)
+three = FieldElement(f, 3)
+four = FieldElement(f, 4)
+eight = FieldElement(f, 8)
+
+# P = Polynomial.interpolate([zero, one, two, three], [three, two, three, eight])
+
+# print(P)
+
+# P = MultiVPolynomial({(0, 0) : one, (0, 1) : two, (1, 0) : three, (1, 1) : eight})
+# Q = MultiVPolynomial({(0, 0) : two, (0, 2) : two, (1, 0) : eight, (1, 1) : four})
+R = MultiVPolynomial({(0, 0) : one, (1, 0) : three, (1, 1) : eight})
+S = MultiVPolynomial({(0, 0) : two, (0, 2) : two, (1, 1) : four})
+
+print(f'R(X, Y) = {R}\n')
+print(f'S(X, Y) = {S}\n')
+# print(P.exp)
+# print(f'(PQ)(X, Y) = {R*S}')
+
+A = MultiVPolynomial({(0, 0) : one, (1, 0) : two, (1, 1) : one})
+B = MultiVPolynomial({(0, 0) : two, (0, 1) : one, (1, 1) : four})
+
+print(f'A(X,Y) = {A}')
+print(f'B(X,Y) = {B}')
+print(f'(AB)(X,Y) = {A*B}')

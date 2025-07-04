@@ -5,7 +5,7 @@ class FieldElement :
         self.field = field
         self.value = self.field.mod(value)
     
-    def __eq__(self, b : 'FieldElement'):
+    def __eq__(self, b : 'FieldElement') :
         return self.field == b.field and self.value == b.value
 
     def __repr__(self):

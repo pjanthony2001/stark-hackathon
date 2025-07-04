@@ -59,9 +59,6 @@ class Polynomial :
             return self.coef == b.coef
         return False
 
-    def __ne__(self, b : 'Polynomial') -> 'bool':
-        return 1-self.__eq__(b)
-
     def __add__(self, b : 'Polynomial|FieldElement') -> 'Polynomial' :
         if isinstance(b, FieldElement) :
             b = Polynomial([b])
@@ -87,7 +84,6 @@ class Polynomial :
             return self.__add__(-b)
         except Exception as e :
             print(f'In sub : {e}')
-
     
     def __rsub__(self, b : 'FieldElement') :
         return self.__sub__(b)
@@ -116,10 +112,12 @@ class Polynomial :
     def __rmul__(self, b : 'FieldElement') :
         return self.__mul__(b)
 
+    def __truediv__(self, b : 'FieldElement'):
+        return self.__mul__(b**(-1))
+
     def __pow__(self, exp : 'int') -> 'Polynomial':
         if exp == 0 :
             return Polynomial.one(self.field)
-        # return self*self.__pow__(exp-1)
         res = self
         for k in range(exp - 1) :
             res *= self
@@ -158,18 +156,18 @@ class Polynomial :
 
     @staticmethod
     def interpolate(x : 'list[FieldElement]', y : 'list[FieldElement]') -> 'Polynomial' :
-        if len(x) != len(y) :
-            raise Exception('Abscissas and ordinates lists must have the same length')
-        P = Polynomial.zero()
         n = len(x)
+        if n == 0 :
+            raise Exception('Impossible to interpolate from an empty list of abscissas.')
+        if len(y) != n :
+            raise Exception('Abscissas and ordinates lists must have the same length.')
+        if not FieldElement.field_eq(x+y) :
+            raise Exception('Abscissas and ordinates lists must belong to the same field.')
+        P = Polynomial.zero()
         for i in range(n) :
             product = Polynomial(y[i])
             for j in range (n) :
                 if j != i :
-                    product = Polynomial.scalar_div(Polynomial.X - Polynomial([x[j]]), x[i] - x[j])
+                    product *= (Polynomial.X(x[0].field) - Polynomial([x[j]]))/(x[i] - x[j])
             P += product
         return P
-
-
-
-

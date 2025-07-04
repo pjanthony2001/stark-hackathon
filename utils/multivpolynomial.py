@@ -47,15 +47,12 @@ class MultiVPolynomial :
         return sum
 
     def monom_recalibration(self) -> None :
-        print('monom_recalibration')
-        print(self)
         if self.is_zero() :
             self = MultiVPolynomial.zero(self.field, 1)
         else :
             for exp in self.exp :
                 if self.coef[exp].value == 0 :
                     del self.coef[exp]
-        print(self)
 
     def var_recalibration(self) -> None :
         self.actu()
@@ -63,7 +60,6 @@ class MultiVPolynomial :
         stopper = False
         for i in range(n) :
             while not stopper :
-                print([exp[i] for exp in self.exp])
                 if MultiVPolynomial.sum_list([exp[i] for exp in self.exp]) == 0 :
                     n -= 1
                 else :
@@ -164,14 +160,12 @@ class MultiVPolynomial :
             raise Exception('Impossible to multiply multivariate polynomials linked to different fields.')
         prod = MultiVPolynomial.zero(self.field, self.var)
         for exp_b in b.exp :
-            print(f'exp_b = {exp_b}')
             for exp_self in self.exp :
                 exp_prod = tuple([exp_b[i] + exp_self[i] for i in range(self.var)])
                 if exp_prod in prod.exp :
                     prod.coef[exp_prod] += b.coef[exp_b]*self.coef[exp_self]
                 else :
                     prod.coef[exp_prod] = b.coef[exp_b]*self.coef[exp_self]
-        print()
         return prod
     
     def __rmul__(self, b : 'FieldElement') -> 'MultiVPolynomial' :

@@ -65,7 +65,7 @@ S = MultiVPolynomial({(0, 0) : two, (0, 2) : two, (1, 1) : four})
 print(f'R(X, Y) = {R}\n')
 print(f'S(X, Y) = {S}\n')
 # print(P.exp)
-# print(f'(PQ)(X, Y) = {R*S}')
+print(f'(PQ)(X, Y) = {R*S}')
 
 A = MultiVPolynomial({(0, 0) : one, (1, 0) : two, (1, 1) : one})
 B = MultiVPolynomial({(0, 0) : two, (0, 1) : one, (1, 1) : four})

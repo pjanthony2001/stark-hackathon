@@ -18,24 +18,33 @@ class FieldElement :
         return f'{self.value}'
 
     def __add__(self, b : 'FieldElement') -> 'FieldElement' :
-        try :
-            return self.field.add(self, b)
-        except Exception as e :
-            print (e)
+        if isinstance(b, FieldElement) :
+            try :
+                return self.field.add(self, b)
+            except Exception as e :
+                print (e)
+        else :
+            return NotImplemented
     
     def __sub__(self, b : 'FieldElement') -> 'FieldElement' :
-        try :
-            return self.field.sub(self, b)
-        except Exception as e :
-            print (e)
+        if isinstance(b, FieldElement) :
+            try :
+                return self.field.sub(self, b)
+            except Exception as e :
+                print (e)
+        else :
+            return NotImplemented
     
     def __mul__(self, b : 'FieldElement') -> 'FieldElement' :
-        try :
-            return self.field.mul(self, b)
-        except Exception as e :
-            print (e)
+        if isinstance(b, FieldElement) :
+            try :
+                return self.field.mul(self, b)
+            except Exception as e :
+                print (e)
+        else :
+            return NotImplemented
 
-    def __power__(self, exp : 'int') -> 'FieldElement' :
+    def __pow__(self, exp : 'int') -> 'FieldElement' :
         try :
             return self.field.power(self, exp)
         except Exception as e :
@@ -55,6 +64,14 @@ class FieldElement :
     
     def is_zero(self) -> 'bool' :
         return self.value == 0
+    
+    @staticmethod
+    def field_eq(elts : 'list[FieldElement]') -> 'bool' :
+        if len(elts) > 0 :
+            for elt in elts[1:] :
+                if elt.field != elts[0].field :
+                    return False
+        return True
 
 class Field :
 
@@ -78,42 +95,44 @@ class Field :
     def add(self, a : 'FieldElement', b : 'FieldElement') -> 'FieldElement' :
         if a.field != b.field :
             raise Exception('Operations between terms from different fields are prohibited.')
-        return FieldElement((a.value + b.value) % self.p)
+        return FieldElement(self, (a.value + b.value) % self.p)
     
     def sub(self, a : 'FieldElement', b : 'FieldElement') -> 'FieldElement' :
         if a.field != b.field :
             raise Exception('Operations between terms from different fields are prohibited.')
-        return FieldElement((a.value - b.value) % self.p)
+        return FieldElement(self, (a.value - b.value) % self.p)
 
     def mul(self, a : 'FieldElement', b : 'FieldElement') -> 'FieldElement' :
         if a.field != b.field :
             raise Exception('Operations between terms from different fields are prohibited.')
-        return FieldElement((a.value*b.value) % self.p)
+        return FieldElement(self, (a.value*b.value) % self.p)
     
     def power(self, a : 'FieldElement', exp : 'int') -> 'FieldElement' :
+        if exp == 0 :
+            return self.one
         if exp == 1 :
             return a
         b = FieldElement(self, (a.value**2) % self.p)
-        return self.power(b, exp//2 + exp%2) 
+        return self.power(b, exp//2)*self.power(a, exp%2)
 
     def truediv(self, a : 'FieldElement', b : 'FieldElement') -> 'FieldElement' :
         if a.field != b.field :
             raise Exception('Operations between terms from different fields are prohibited.')
         if b.is_zero() :
             raise Exception('Division by zero.')
-        return FieldElement((b.value * a.value**(self.p-1)) % self.p)
+        return FieldElement(self, (b.value * a.value**(self.p-1)) % self.p)
     
     def repr_element(self, a : 'FieldElement') -> 'str' :
         return f'{a.value} in {self}'
     
     def generator(self):
         assert(self.p == 1 + 407 * ( 1 << 119 )), "Do not know generator for other fields beyond 1+407*2^119"
-        return FieldElement(85408008396924667383611388730472331217, self)
+        return FieldElement(self, 85408008396924667383611388730472331217)
         
     def primitive_nth_root(self, n):
         if self.p == 1 + 407 * ( 1 << 119 ):
             assert(n <= 1 << 119 and (n & (n-1)) == 0), "Field does not have nth root of unity where n > 2^119 or not power of two."
-            root = FieldElement(85408008396924667383611388730472331217, self)
+            root = FieldElement(self, 85408008396924667383611388730472331217)
             order = 1 << 119
             while order != n:
                 root = root^2
@@ -121,3 +140,8 @@ class Field :
             return root
         else:
             assert(False), "Unknown field, can't return root of unity."
+    
+    @classmethod
+    def main(cls):
+        p = 1 + 407 * ( 1 << 119 ) # 1 + 11 * 37 * 2^119
+        return cls(p)

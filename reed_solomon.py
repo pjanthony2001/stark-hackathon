@@ -26,7 +26,7 @@ class ReedSolomonCode:
     
     def check_poly(self) -> bool:
         self.p = Polynomial.interpolate(self.domain.list, self.values)
-        return p.deg() <= max_degree and all(p(x) == values[i] for i, x in enumerate(self.domain.list)), "Values do not interpolate correctly" # type: ignore
+        return p.deg() <= max_degree and all(p(x) == values[i] for i, x in enumerate(self.domain.list)), "Values do not interpolate properly." # type: ignore
         
     def poly_eval(self, x: FieldElement) -> FieldElement:
         if self.p == None:
@@ -100,10 +100,10 @@ class QueryGenerator:
         res = []
         
         for i in self.query_indexes:
-            a = self.round_parameters.w * (self.round_parameters.g ** i)
+            a = self.round_parameters.w * (self.round_parameters.g ** i) # type: ignore
             f_a  = curr_codeword.get_index(i)
             
-            b = self.round_parameters.w * (self.round_parameters.g ** (self.round_parameters.size_of_group // 2  + i))
+            b = self.round_parameters.w * (self.round_parameters.g ** (self.round_parameters.size_of_group // 2  + i)) # type: ignore
             f_b = curr_codeword.get_index(self.round_parameters.size_of_group // 2  + i)
             
             c = alpha
@@ -143,4 +143,5 @@ class Round:
 
 
 class Prover:
-    
+    def __init__(self) -> None:
+        pass

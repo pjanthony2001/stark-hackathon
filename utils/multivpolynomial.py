@@ -5,10 +5,14 @@ class MultiVPolynomial :
 
     ALPHABET = 'XYZWTUVABCDEFGHIJKLMNOPQRSxyzwtuvabcdefghijklmnopqrs'
     
-    def __init__(self, coef : 'dict[tuple[int]]') :
+    def __init__(self, coef : 'dict[tuple]') : # type: ignore
         if len(coef.keys()) == 0 :
             raise Exception('Multivariate olynomials must have at least 1 coefficient.')
         self.exp = list(coef.keys())
+        for exp in self.exp :
+            for alpha in exp :
+                if not isinstance(alpha, int) :
+                    raise Exception('Exponents must be integers.')
         if not FieldElement.field_eq([coef[exp] for exp in self.exp]) :
             raise Exception('Coefficients of the polynomial must belong to the same field.')
         self.field = coef[self.exp[0]].field
@@ -33,6 +37,7 @@ class MultiVPolynomial :
             for exp in b.exp :
                 b.coef[exp + tuple((a.var - b.var)*[0])] = b.coef[exp]
                 del b.coef[exp] 
+
         a.actu()
         b.actu()
 
@@ -59,7 +64,7 @@ class MultiVPolynomial :
         n = self.var
         stopper = False
         for i in range(n) :
-            while not stopper :
+            while not stopper and n >= 0 :
                 if MultiVPolynomial.sum_list([exp[i] for exp in self.exp]) == 0 :
                     n -= 1
                 else :
@@ -74,10 +79,11 @@ class MultiVPolynomial :
         self.var = len(self.exp[0])
         self.exp = list(self.coef.keys())
     
-    def __eq__(self, b : 'MultiVPolynomial') -> 'bool' :
+    def __eq__(self, b : 'MultiVPolynomial') -> 'bool' : # type: ignore
         return self.coef == b.coef
 
-    def monom_str(exp : 'list[int]', coef : 'FieldElement') -> 'str' :
+    @staticmethod
+    def monom_str(exp : 'tuple[int]', coef : 'FieldElement') -> 'str' :
         monom = ''
         for i in range(len(exp)) :
             var = ''
@@ -107,7 +113,7 @@ class MultiVPolynomial :
         return poly
     
     def __call__(self, ant : 'list[FieldElement]') -> 'FieldElement' :
-        value = 0
+        value = self.field.zero
         v = self.var
         for exp in self.exp :
             exp_val = self.coef[exp]
@@ -116,13 +122,14 @@ class MultiVPolynomial :
             value += exp_val
         return value
     
-    def __add__(self, b : 'MultiVPolynomial') -> 'MultiVPolynomial':
+    def __add__(self, b : 'MultiVPolynomial|FieldElement|Polynomial') -> 'MultiVPolynomial':
+        if isinstance(b, FieldElement) :
+            b = MultiVPolynomial({(0, 0) : b})
+        if isinstance(b, Polynomial) :
+            b = MultiVPolynomial.multivariation(b)
         if not isinstance(b, MultiVPolynomial) :
             raise TypeError('A multivariate polynomial can only be summed with multivariate polynomials.')
-        self.actu()
-        b.actu()
-        if b.var != self.var :
-            raise Exception('Impossible to sum multivariate polynomials with different number of variables.')
+        MultiVPolynomial.synchro(self, b)
         if b.field != self.field :
             raise Exception('Impossible to sum multivariate polynomials linked to different fields.')
         sum = self
@@ -133,7 +140,7 @@ class MultiVPolynomial :
                 sum.coef[exp] = b.coef[exp]
         return sum
     
-    def __radd__(self, b : 'FieldElement') -> 'MultiVPolynomial' :
+    def __radd__(self, b : 'FieldElement|Polynomial') -> 'MultiVPolynomial' :
         return self.__add__(b)
 
     def __neg__(self) -> 'MultiVPolynomial' :
@@ -142,20 +149,23 @@ class MultiVPolynomial :
             coef_neg[exp] = -self.coef[exp]
         return MultiVPolynomial(coef_neg)
 
-    def __sub__(self, b : 'MultiVPolynomial') -> 'MultiVPolynomial' :
+    def __sub__(self, b : 'MultiVPolynomial|FieldElement|Polynomial') -> 'MultiVPolynomial' :
         return self.__add__(-b)
 
-    def __mul__(self, b : 'MultiVPolynomial|FieldElement') -> 'MultiVPolynomial' :
+    def __rsub__(self, b : 'FieldElement|Polynomial') -> 'MultiVPolynomial' :
+        return self.__sub__(b)
+
+    def __mul__(self, b : 'MultiVPolynomial|FieldElement|Polynomial') -> 'MultiVPolynomial' :
         if isinstance(b, FieldElement) :
             coef_b = {tuple(self.var*[0]) : b.value}
             b = MultiVPolynomial(coef_b)
+        if isinstance(b, Polynomial) :
+            b = MultiVPolynomial.multivariation(b)
         if not isinstance(b, MultiVPolynomial) :
             raise TypeError('A multivariate polynomial can only be multiplied with multivariate polynomials.')
-        self.actu()
-        b.actu()
         MultiVPolynomial.synchro(self, b)
-        if b.var != self.var :
-            raise Exception('Impossible to multiply multivariate polynomials with different number of variables.')
+        print(self.var)
+        print(b.var)
         if b.field != self.field :
             raise Exception('Impossible to multiply multivariate polynomials linked to different fields.')
         prod = MultiVPolynomial.zero(self.field, self.var)
@@ -168,22 +178,26 @@ class MultiVPolynomial :
                     prod.coef[exp_prod] = b.coef[exp_b]*self.coef[exp_self]
         return prod
     
-    def __rmul__(self, b : 'FieldElement') -> 'MultiVPolynomial' :
+    def __rmul__(self, b : 'FieldElement|Polynomial') -> 'MultiVPolynomial' :
         return self.__mul__(b)
 
     def __truediv__(self, b : 'FieldElement') -> 'MultiVPolynomial' :
-        return self.__mul__(FieldElement(b.field, 1/b.value))
+        return self.__mul__(FieldElement(b.field, b.value**int(-1)))
 
     def __pow__(self, alpha : int) -> 'MultiVPolynomial' :
         if alpha == 0 :
-            return self.one
+            return MultiVPolynomial.one(self.field, self.var)
         if alpha == 1 :
             return self
         b = self*self
-        return self.__pow__(b, alpha//2)*self.__pow__(b, alpha%2)
+        return b.__pow__(alpha//2)*self.__pow__(alpha%2)
 
     @staticmethod
-    def zero(field : Field, var : 'int') -> 'MultiVPolynomial' :
+    def one(field : 'Field', var : 'int') :
+        return MultiVPolynomial({tuple(var*[0]) : FieldElement(field, 1)})
+
+    @staticmethod
+    def zero(field : 'Field', var : 'int') -> 'MultiVPolynomial' :
         if var <= 0 :
             raise Exception('Zero multivariable polynomial mustt have at least 1 variable.')
         return MultiVPolynomial({tuple(var*[0]) : FieldElement(field, 0)})
@@ -197,7 +211,7 @@ class MultiVPolynomial :
         return True
     
     @classmethod
-    def X(cls, field : Field, n : int) :
+    def X(cls, field : 'Field', n : 'int') :
         return MultiVPolynomial({tuple((n - 1)*[0] + [1]) : FieldElement(field, 1)})
 
     @staticmethod
@@ -212,14 +226,17 @@ class MultiVPolynomial :
             list_x += var_list 
         if not FieldElement.field_eq(list_x + y) :
             raise Exception('Abscissas and ordinates lists must belong to the same field.')
-        P = MultiVPolynomial.zero()
-        var = len(x)
+        var = len(x[0])
+        if var == 0 :
+            raise Exception('Abscissas\' list contains only empty lists : impossible to interpolate a no-variate polyomial.') 
+        field = x[0][0].field
+        P = MultiVPolynomial.zero(field, var)
         for i in range(n) :
             product = MultiVPolynomial({tuple(var*[0]) : y[i]})
             for j in range (n) :
                 for k in range(var) :
                     if j != i :
-                        product *= (MultiVPolynomial.X(k) - x[j][k])/(x[i][k] - x[j][k])
+                        product *= (MultiVPolynomial.X(field, k) - x[j][k])/(x[i][k] - x[j][k])
             P += product
         return P
     
@@ -234,3 +251,10 @@ class MultiVPolynomial :
                 monom *= polys[k-1]**exp[k]
             monovariate += monom
         return monovariate
+
+    @classmethod
+    def multivariation(cls, poly : 'Polynomial') -> 'MultiVPolynomial' :
+        multiv_coef = {}
+        for exp, coef in enumerate(poly.coef) :
+            multiv_coef[tuple([exp])] = coef
+        return cls(multiv_coef)

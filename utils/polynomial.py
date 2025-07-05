@@ -38,9 +38,11 @@ class Polynomial :
         return poly
 
     @staticmethod
-    def synchro(a : 'Polynomial', b : 'Polynomial') -> 'int':
+    def synchro(a : 'Polynomial', b : 'Polynomial|FieldElement') -> 'int':
         if a.field != b.field :
             raise Exception('It makes no sense to synchronise two polynomials with coefficients from different fields.')
+        if isinstance(b, FieldElement) :
+            b = Polynomial([b])
         d = max(a.deg(), b.deg())
         a.coef = a.coef[:a.deg() + 1]
         b.coef = b.coef[:b.deg() + 1]
@@ -50,7 +52,7 @@ class Polynomial :
             b.coef = b.coef + (d + 1 - len(b.coef))*[FieldElement(b.field, 0)]
         return d
 
-    def __eq__(self, b : 'Polynomial') -> 'bool':
+    def __eq__(self, b : 'Polynomial') -> 'bool': # type: ignore
         if self.field == b.field :
             try :
                 d = Polynomial.synchro(self, b)
@@ -78,7 +80,7 @@ class Polynomial :
     def __neg__(self) -> 'Polynomial' :
         return Polynomial([-coef for coef in self.coef])
 
-    def __sub__(self, b : 'Polynomial|FieldElement') -> 'Polynomial' :
+    def __sub__(self, b : 'Polynomial|FieldElement') -> 'Polynomial' : # type: ignore
         try :
             d = Polynomial.synchro(self, b)
             return self.__add__(-b)
@@ -88,7 +90,7 @@ class Polynomial :
     def __rsub__(self, b : 'FieldElement') :
         return self.__sub__(b)
 
-    def __mul__(self, b : 'Polynomial|FieldElement') -> 'Polynomial' :
+    def __mul__(self, b : 'Polynomial|FieldElement') -> 'Polynomial' : # type: ignore
         if isinstance(b, FieldElement) :
             b = Polynomial([b])
         if isinstance(b, Polynomial) :
@@ -113,7 +115,7 @@ class Polynomial :
         return self.__mul__(b)
 
     def __truediv__(self, b : 'FieldElement'):
-        return self.__mul__(b**(-1))
+        return self.__mul__(b**(-1)) # type: ignore
 
     def __pow__(self, exp : 'int') -> 'Polynomial':
         if exp == 0 :
@@ -140,11 +142,10 @@ class Polynomial :
                 raise Exception('The polynomial and its argument must belonbe linked to the same field.')
             value = self.field.zero
             for index, coef in enumerate(self.coef) :
-                value += coef*(arg**index)
+                value += coef*(arg**index) # type: ignore
             return value
         else :
             raise Exception('TypeError : the argument of the polynomials can only be a polynomial or a field element.')
-
 
     @staticmethod
     def zero(field : 'Field') -> 'Polynomial' :

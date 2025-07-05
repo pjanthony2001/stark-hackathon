@@ -7,7 +7,7 @@ class BoundaryConstraint():
     def __init__(self, initial_value: list[FieldElement], final_value: list[FieldElement]):
         self.initial_value = initial_value
         self.final_value = final_value
-        self.length = len(self.value)
+        self.length = len(self.initial_value)
 
     def to_polynomial_initial_constraint(self):
         value = self.initial_value
@@ -23,6 +23,6 @@ class BoundaryConstraint():
         for i in range(n):
             polynomial[keys[i + 1]] = - value[i]
         
-        polynomial[0] = FieldElement(value[0].field(), 1)
+        polynomial[0] = FieldElement(value[0].field, 1)
         
         return MultiVPolynomial(polynomial)

@@ -1,11 +1,11 @@
-
+from typing import Optional
 class FieldElement :
 
     def __init__(self, field : 'Field', value : 'int'):
         self.field = field
         self.value = self.field.mod(value)
     
-    def __eq__(self, b : 'FieldElement') :
+    def __eq__(self, b : 'FieldElement') -> 'bool' : # type: ignore
         return self.field == b.field and self.value == b.value
 
     def __repr__(self):
@@ -14,7 +14,7 @@ class FieldElement :
     def __str__(self):
         return f'{self.value}'
 
-    def __add__(self, b : 'FieldElement') -> 'FieldElement' :
+    def __add__(self, b : 'FieldElement') -> 'FieldElement' : # type: ignore
         if isinstance(b, FieldElement) :
             try :
                 return self.field.add(self, b)
@@ -23,7 +23,7 @@ class FieldElement :
         else :
             return NotImplemented
     
-    def __sub__(self, b : 'FieldElement') -> 'FieldElement' :
+    def __sub__(self, b : 'FieldElement') -> 'FieldElement' : # type: ignore
         if isinstance(b, FieldElement) :
             try :
                 return self.field.sub(self, b)
@@ -32,7 +32,7 @@ class FieldElement :
         else :
             return NotImplemented
     
-    def __mul__(self, b : 'FieldElement') -> 'FieldElement' :
+    def __mul__(self, b : 'FieldElement') -> 'FieldElement' : # type: ignore
         if isinstance(b, FieldElement) :
             try :
                 return self.field.mul(self, b)
@@ -41,15 +41,15 @@ class FieldElement :
         else :
             return NotImplemented
 
-    def __pow__(self, exp : 'int') -> 'FieldElement' :
+    def __pow__(self, exp : 'int') -> 'Optional[FieldElement]' :
         try :
             return self.field.pow(self, exp)
         except Exception as e :
             print (e)
 
-    def __truediv__(self, b : 'FieldElement') -> 'FieldElement' :
+    def __truediv__(self, b : 'FieldElement') -> 'Optional[FieldElement]' :
         try :
-            return self.field.truediv(self)
+            return self.field.truediv(self) # type: ignore
         except Exception as e :
             print (e)
 
@@ -74,7 +74,7 @@ class Field :
         self.zero = FieldElement(self, 0)
         self.one = FieldElement(self, 1)
     
-    def __eq__(self, field2 : 'Field') :
+    def __eq__(self, field2 : 'Field') : # type: ignore
         return self.p == field2.p
     
     def __neq__(self, field2 : 'Field') :
@@ -103,7 +103,7 @@ class Field :
     
     def pow(self, a : 'FieldElement', exp : 'int') -> 'FieldElement' :
         if exp == -1 :
-            return self.inv(a)
+            return a**int(self.p-2) #type: ignore
         if exp == 0 :
             return self.one
         if exp == 1 :
@@ -111,15 +111,13 @@ class Field :
         b = FieldElement(self, (a.value**2) % self.p)
         return self.pow(b, exp//2)*self.pow(a, exp%2)
 
-    def inv(self, a : 'FieldElement') -> 'FieldElement' :
-        return a**(self.p-2)
-
-    def truediv(self, a : 'FieldElement', b : 'FieldElement') -> 'FieldElement' :
+    def truediv(self, a : 'FieldElement', b : 'FieldElement') -> 'Optional[FieldElement]' :
         if a.field != b.field :
             raise Exception('Operations between terms from different fields are prohibited.')
         if b.is_zero() :
             raise Exception('Division by zero.')
-        return self.mul(a, self.inv(b))
+        assert isinstance(b, FieldElement)
+        return self.mul(a, self.inv(b)) # type: ignore
     
     def repr_element(self, a : 'FieldElement') -> 'str' :
         return f'{a.value} in {self}'
@@ -134,7 +132,7 @@ class Field :
             root = FieldElement(self, 85408008396924667383611388730472331217)
             order = 1 << 119
             while order != n:
-                root = root^2
+                root = root**2 # type: ignore
                 order = order/2
             return root
         else:

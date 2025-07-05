@@ -59,17 +59,25 @@ eight = FieldElement(f, 8)
 
 # P = MultiVPolynomial({(0, 0) : one, (0, 1) : two, (1, 0) : three, (1, 1) : eight})
 # Q = MultiVPolynomial({(0, 0) : two, (0, 2) : two, (1, 0) : eight, (1, 1) : four})
-R = MultiVPolynomial({(0, 0) : one, (1, 0) : three, (1, 1) : eight})
-S = MultiVPolynomial({(0, 0) : two, (0, 2) : two, (1, 1) : four})
+R = MultiVPolynomial({(0, 0) : one, (1, 0) : three, (1, 1) : eight})# type: ignore
+S = MultiVPolynomial({(0, 0) : two, (0, 2) : two, (1, 1) : four}) # type: ignore
 
 print(f'R(X, Y) = {R}\n')
 print(f'S(X, Y) = {S}\n')
 # print(P.exp)
 print(f'(PQ)(X, Y) = {R*S}')
 
-A = MultiVPolynomial({(0, 0) : one, (1, 0) : two, (1, 1) : one})
-B = MultiVPolynomial({(0, 0) : two, (0, 1) : one, (1, 1) : four})
+A = MultiVPolynomial({(0, 0) : one, (1, 0) : two, (1, 1) : one}) # type: ignore
+B = MultiVPolynomial({(0, 0) : two, (0, 1) : one, (1, 1) : four}) # type: ignore
 
 print(f'A(X,Y) = {A}')
 print(f'B(X,Y) = {B}')
 print(f'(AB)(X,Y) = {A*B}')
+print(f'(A*A)(X,Y) = {A*A}')
+# print(f'(A**2)(X) = {A**2}')
+
+# a = (1, 2, 3)
+# print(a)
+# print(a[0])
+# print(len(a))
+

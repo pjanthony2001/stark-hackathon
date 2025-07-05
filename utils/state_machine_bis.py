@@ -24,4 +24,4 @@ class StateMachine():
         return Matrix(self.T, self.w, values)
     
     def to_poly(self):
-         
+        pass

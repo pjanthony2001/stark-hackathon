@@ -29,5 +29,5 @@ class ProofStream:
         return shake_256( self.serialization()).digest(num_bytes)
     
     def verifier_communicating(self, num_bytes = 32):
-        return shake_256( pickle.dumps(self.objects[:self.read_index].deserialization()) ).digest(num_bytes)
+        return shake_256( pickle.dumps(self.objects[:self.read_index]) ).digest(num_bytes)
 

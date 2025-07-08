@@ -48,7 +48,7 @@ Stark – Hackathon est une implémentation expérimentale d’un système de pr
 
 ---
 
-## 💡 Prochaines étapes
+## Prochaines étapes
 
 - Finaliser la classe StateMachine pour pouvoir réaliser un premier essai
 - Coder un verifier 

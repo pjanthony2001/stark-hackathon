@@ -29,7 +29,7 @@ Stark – Hackathon est une implémentation expérimentale d’un système de pr
 
 ---
 
-## Stack technique
+## Points techniques
 
 - **Langage :** Python 3.10+
 - **Structure du projet :**

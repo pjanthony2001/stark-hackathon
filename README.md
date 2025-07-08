@@ -1,4 +1,4 @@
-# Projet stark hackathon
+# Projet STARK hackathon
 
 Notre projet de hackathon traitait des STARK, "Scalable Transparent Arguments of Knowledge", un cas particulier de "Zero Knowledge Proof". Nous devions d'abord comprendre ce qu'est un STARK, nous avons donc lu des publications et regardé des vidéos fournies à ce sujet. Nous avons aussi pu faire une visio avec un stagiaire travaillant dans ce domaine, ainsi qu'avec notre encadrant.
 

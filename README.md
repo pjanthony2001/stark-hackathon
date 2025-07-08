@@ -23,7 +23,7 @@ Stark – Hackathon est une implémentation expérimentale d’un système de pr
 
 ##  Contenu
 
-- **Algèbre :** `Fields`, `FieldElement`, `Polynomial`, etc.
+- **Algèbre :** `Fields`, `FieldElement`, `Polynomial`, `MultiVPolynomial`, etc.
 - **Protocole FRI :** Implémentation complète du protocole de test de faible degré
 - **StateMachine :** Émulation d'une machine qui encode différentes étapes de calcul avec une entrée x_0 et le passage d'un état à l'autre par le produit de x_i et d'une matrice A. **À compléter**.
 
@@ -42,13 +42,13 @@ Stark – Hackathon est une implémentation expérimentale d’un système de pr
    - `mutlivpolynomial/` - opérations sur les polynômes à plusieurs variables  
    - `poly/` – opérations sur les polynômes et racines de l’unité    
    - `proof_stream/` - rendre le protocole non interactif en simulant un vérifieur
-   - `reed_solomon` - implémentation de la transformation de la trace en Reed - Solomon codeword 
+   - `reed_solomon/` - implémentation de la transformation de la trace en Reed - Solomon codeword 
    - `state_machine/` – début d'implémentation de la state_machine mentionnée plus haut **À finir**
-   - `transition` - encoder les conditions de transition (la relation de récurrence dans les calculs)
+   - `transition/` - encoder les conditions de transition (la relation de récurrence dans les calculs)
 
 ---
 
 ## Prochaines étapes
 
 - Finaliser la classe StateMachine pour pouvoir réaliser un premier essai
-- Coder un verifier 
+- Coder un vérifieur 

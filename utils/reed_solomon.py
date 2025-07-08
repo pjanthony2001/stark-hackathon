@@ -1,7 +1,7 @@
 from utils.field import MainFieldElement, Field, FieldElement
 from utils.polynomial import Polynomial
 from utils.merkle_tree import Node, MerkleTree
-from utils.state_machine_bis import StateMachine
+from utils.state_machine import StateMachine
 
 import random
 from typing import Self, Callable

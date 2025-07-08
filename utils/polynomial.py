@@ -1,5 +1,5 @@
 from utils.field import FieldElement, Field
-
+from utils.reed_solomon import Domain
 class Polynomial :
     def __init__(self, coef : 'list[FieldElement]'):
         if len(coef) == 0 :
@@ -147,6 +147,9 @@ class Polynomial :
         else :
             raise Exception('TypeError : the argument of the polynomials can only be a polynomial or a field element.')
 
+    def evaluate_domain(self, domain: Domain):
+        return [self(ele) for ele in domain.values]
+    
     @staticmethod
     def zero(field : 'Field') -> 'Polynomial' :
         return Polynomial([FieldElement(field, 0)])
@@ -172,3 +175,5 @@ class Polynomial :
                     product *= (Polynomial.X(x[0].field) - Polynomial([x[j]]))/(x[i] - x[j])
             P += product
         return P
+    
+    

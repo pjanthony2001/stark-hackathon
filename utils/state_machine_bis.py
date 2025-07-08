@@ -1,7 +1,9 @@
 from utils.transition import TransitionConstraint
 from utils.boundary import BoundaryConstraint
 from utils.matrix import Matrix
-
+from utils.reed_solomon import Domain
+from utils.polynomial import Polynomial
+from utils.field import Field
 class StateMachine():
     
     def __init__(self, transition_constraint: TransitionConstraint, boundary_constraint: BoundaryConstraint, T: int, w: int):
@@ -23,5 +25,5 @@ class StateMachine():
 
         return Matrix(self.T, self.w, values)
     
-    def to_poly(self):
-        pass
+    def compute_polynomial(self, domain: Domain) -> Polynomial:
+        return Polynomial.X(Field.main()) # REWORK WITH proper AIR 

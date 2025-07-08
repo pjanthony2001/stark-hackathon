@@ -16,7 +16,7 @@ Stark – Hackathon est une implémentation expérimentale d’un système de pr
 
 - Réalisé : Opérations algébriques de base et sur les polynômes  
 - Réalisé : Protocole FRI implémenté et fonctionnel  
-- Non complété : Preuve STARK pour la machine à états généralisée 
+- Non complété : implémentation de la généralisation de la suite de Fibonacci à une state_machine
 - Version avec preuve de Fibonacci déjà disponible dans https://github.com/starkware-industries/stark101.
 
 ---

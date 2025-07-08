@@ -3,7 +3,7 @@ from hashlib import shake_256
 
 class ProofStream:
     
-    def __init__(self, read_index):
+    def __init__(self, read_index=0):
         self.read_index = 0
         self.objects = []
     
@@ -19,6 +19,7 @@ class ProofStream:
     def serialization(self):
         return pickle.dumps(self.objects)
     
+    @staticmethod
     def deserialization(pickled_list):
         ps = ProofStream()
         ps.objects = pickle.loads(pickled_list)

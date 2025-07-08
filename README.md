@@ -1,15 +1,54 @@
-# Projet STARK hackathon
+# Stark – Hackathon 
 
-Notre projet de hackathon traitait des STARK, "Scalable Transparent Arguments of Knowledge", un cas particulier de "Zero Knowledge Proof". Nous devions d'abord comprendre ce qu'est un STARK, nous avons donc lu des publications et regardé des vidéos fournies à ce sujet. Nous avons aussi pu faire une visio avec un stagiaire travaillant dans ce domaine, ainsi qu'avec notre encadrant.
+**Un prototype minimal de zk‑STARK développé à partir de zéro.**
 
-Le principe du STARK est de prouver à un vérifieur qu'on a réalisé un calcul sans qu'il ait à le refaire et sans qu'il ait accès aux étapes intermédiaires. Cela a des applications en cryptographie, et cela permet de vérifier le résultat d'un calcul avec une complexité très inférieure à la complexité du calcul lui-même.
-L'exemple sur lequel nous avons travaillé est le suivant : on prend une suite u_n, de premiers termes 1 et x, avec une relation de récurrence de la forme u_{n+2}=u_{n+1}+u_n. On travaille ensuite modulo p avec p nombre premier très grand. 
-On affirme alors : il existe un x tel que en utilisant ce x pour l'initialisation, on a u_N=C (N et C constantes connues de tous). On possède un tel x et on cherche à convaincre le vérifieur de cela sans qu'il ne puisse remonter à la valeur de x.
+---
 
-Pour cela, on raisonne en plusieurs étapes. Dans un premier temps, on calcule les N+1 premiers termes de la suite. On a donc un tableau [u_0, u_1,...,U_N]. On se place ensuite dans un sous-groupe de Z/pZ, on prend pour cela g dans le groupe et on forme un second tableau [g^0 ,g^1,...,g^N]. Ces deux tableaux nous donnent (N+1) points dans le plan : (g^0,u_0),...,(g^N,u_N). On fait alors passer un polynôme interpolateur de Lagrange de degré N par ces N+1 points, noté P.
-On cherche à prouver au vérifieur qu'on a une suite satisfaisant : u_0=1 ; u_N=C ; pour tout n, u_{n+2}=u_{n+1}+u_{n}. Avec notre polynôme, ces conditions sont équivalentes à P(g^0)=1, P(g^N)=C et pour tout n, P(g^{n+2})=P(g^{n+1})+P(g^n). Ecrit autrement, cela impose que g^0 est racine de P-1, g^N est racine de P-C et les g^n sont racines d'un certain polynôme. Or dire que a est racine de Q est équivalent à dire que Q/(X-a) est un polynôme. Ainsi, notre affirmation est équivalente à : (P-1)/(X-g^0) est un polynôme, (P-C)/(X-g^N) est un polynôme et une troisième fonction rationelle (découlant de la relation de récurrence) est un polynôme. Cependant on ne souhaite pas prouver pour trois fonctions rationelles qu'elles sont chacune un polynôme (on ferait trois fois les calculs qui vont suivre). Donc on décide de prouver qu'une combinaison linéaire des trois est un polynôme. On demande au vérifieur de nous donner trois éléments de Z/pZ aléatoires alpha_1, alpha_2 et alpha_3, et on considérera la fonction formée par la combinaison linéaire de nos trois polynômes avec ces coefficients alpha_i. Montrer que cette fonction est bien un polynôme est moins fort que montrer que chacune des trois fonctions précédentes est un polynôme, mais la probabilité dans ce cas que ces trois fonctinos soient effectivement des polynômes, sachant que la combinaison linéaire est un polynôme, est très proche de 1. On s'en contentera.
-Il nous faut désormais montrer que cette fonction est un polynôme. Plus précisément, on va montrer qu'elle est proche d'un polynôme de degré inférieur à un certain D (au sens de la distance de Hamming). Or, tout polynôme P peut se décomposer de manière unique de la forme $P(X)=A(X^2)+XB(X^2)$ avec A et B de degré plus faible que P. Si on a un polynôme, on peut donc utiliser cela pour construire une suite de polynômes dedegré descendant. On peut par ailleurs obtenir une expression explicite de A et B en fonction de P : A(X^2)=(P(X)+P(-X))/2 et B(X^2)=(P(X)-P(-X))/2 Depuis un polynôme P, on consruit un nouveau polynôme en demandant au vérifieur un élément aléatoire du corps bêta_i et en additionnant A et bêta_i*B. En itérant on obtient une suite de fonctions qui, si notre affirmation de départ est correcte, est une suite de polynômes de degré de plus en plus bas. On aboutit finalement à un polynôme constant, ce qui montre que la probabilité qu'on ait bien un polynôme au départ de cette méthode de descente est proche de 1.
+## Présentation
 
-Il nous faut ensuite convaincre le vérifieur que les calculs ont bien été faits, qu'ils n'ont pas été falsifiés d'une étape à une autre. Cependant nous ne souhaitons pas lui donner tous nos résultats intermédiaires, on ne souhaite pas qu'il remonte à x. On évalue donc tous nos polynômes sur un certain nombre de points (huit fois plus que notre set de points initial, donc environ 8N points). Chaque polynôme est donc stocké sous forme de tableau de longueur environ 8N. Pour notre polynôme interpolateur ainsi que pour chaque polynôme de notre descente de degré, on a donc un tableau d'évaluations du polynôme et on en fait un arbre de Merkle : à l'aide d'une fonction de hachage connue de tous, on hache deux à deux les valeurs de notre tableau, et on itère jusqu'à obtenir une unique valeur, le sommet de l'arbre. Pour chacuns de nos arbres de Merkle, on envoie au vérifieur la valeur du sommet, cela lui garantit qu'on ne modifiera pas notre tableau de données par la suite. Ensuite, il nous demande, pour chacun de nos tableaux, la valeur en certains points. On la lui donne, ainsi que la partie de l'arbre de Merkle qui correspond. Cette partie de l'arbre lui permet de vérifier qu'il retrouve bien au sommet de l'arbre la valeur qu'on lui a communiquée, ce qui l'assure qu'on n'a pas modifié la valeur de notre tableau qu'on lui donne entre-temps. Le vérifieur choisit les points qu'il veut de sorte à pouvoir à chaque fois les recalculer via les points qu'on lui a donnés du tableau précédent. Il s'assure donc sur quelques points, jugés représentatifs car aléatoires, que les calculs ont été correctement faits d'une étape à l'autre. Le vérifieur est donc convaincu que les calculs n'ont pas été falsifiés, on lui montre qu'on a bien en notre possession un polynôme répondant aux exigences, cela permet de convaincre un vérifieur que l'on est bien en possession d'un x satisfaisant les propriétés énoncées au début, sans lui permettre de remonter à ce x.
+Stark – Hackathon est une implémentation expérimentale d’un système de preuve zk‑STARK développée pendant la semaine de hackathon — sans aucune expérience préalable dans les STARKs. Nous avons implémenté à la main les structures algébriques fondamentales telles que les corps finis, les polynômes et le protocole FRI.
 
-Lors de notre semaine de hackathon, nous avons d'abord cherché à comprendre les fondements mathématiques du sujet, par le biais d'articles, vidéos, discussions avec notre encadrant et entre nous. Ensuite, nous avons codé en Python les différentes parties du prouveur. Nous avons dû nous passer de bibliothèques standards comme Numpy car nous avons travaillé avec des éléments du corps Z/pZ et non avec des entiers.
+À l'origine, notre objectif était de créer une preuve STARK permettant de vérifier un terme d'une **suite de Fibonacci**, un projet que nous a été fourni par notre encadrant, https://github.com/starkware-industries/stark101. Nous avons ensuite voulu généraliser le problème : prouver qu’une **state_machine** avait correctement effectué un calcul à partir d’une entrée initiale et d’une matrice de transformation. Cependant, en raison de la complexité du protocole et du temps limité, cette généralisation n’a pas pu être finalisée.
+
+---
+
+## État actuel
+
+- Réalisé : Opérations algébriques de base et sur les polynômes  
+- Réalisé : Protocole FRI implémenté et fonctionnel  
+- Non complété : Preuve STARK pour la machine à états généralisée 
+- Version avec preuve de Fibonacci déjà disponible dans https://github.com/starkware-industries/stark101.
+
+---
+
+##  Contenu
+
+- **Algèbre :** `Fields`, `FieldElement`, `Polynomial`, etc.
+- **Protocole FRI :** Implémentation complète du protocole de test de faible degré
+- **StateMachine :** Émulation d'une machine qui encode différentes étapes de calcul avec une entrée x_0 et le passage d'un état à l'autre par le produit de x_i et d'une matrice A. **À compléter**.
+
+---
+
+## Stack technique
+
+- **Langage :** Python 3.10+
+- **Structure du projet :**
+`/utils/` - dossier comprenant toutes les classes nécessaires à l'implémentation du protocole STARK
+   - `boundary/` - encoder conditions aux limites de la preuve (valeur initiale, valeur finale)
+   - `field/` – opérations sur les corps finis 
+   - `fri/` – protocole FRI 
+   - `matrix/` - opérations sur les matrices, nécessaire pour manipuler des matrices à coefficients dans un corps fini
+   - `merkle_tree/` - passer d'une computational trace à un merkle tree
+   - `mutlivpolynomial/` - opérations sur les polynômes à plusieurs variables  
+   - `poly/` – opérations sur les polynômes et racines de l’unité    
+   - `proof_stream/` - rendre le protocole non interactif en simulant un vérifieur
+   - `reed_solomon` - implémentation de la transformation de la trace en Reed - Solomon codeword 
+   - `state_machine/` – début d'implémentation de la state_machine mentionnée plus haut **À finir**
+   - `transition` - encoder les conditions de transition (la relation de récurrence dans les calculs)
+
+---
+
+## 💡 Prochaines étapes
+
+- Finaliser la classe StateMachine pour pouvoir réaliser un premier essai
+- Coder un verifier 

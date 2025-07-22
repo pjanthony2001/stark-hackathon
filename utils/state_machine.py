@@ -3,7 +3,7 @@ from utils.boundary import BoundaryConstraint
 from utils.matrix import Matrix
 from utils.domain import Domain
 from utils.polynomial import Polynomial
-from utils.field import Field
+from utils.field import Field, MainFieldElement
 class StateMachine():
     
     def __init__(self, transition_constraint: TransitionConstraint, boundary_constraint: BoundaryConstraint, T: int, w: int):
@@ -25,4 +25,4 @@ class StateMachine():
         return Matrix(self.T, self.w, values)
     
     def compute_polynomial(self, domain: Domain) -> Polynomial:
-        return Polynomial.X(Field.main()) # REWORK WITH proper AIR 
+        return Polynomial.X(Field.main()) ** 2 + Polynomial([MainFieldElement(1)]) # REWORK WITH proper AIR 

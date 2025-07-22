@@ -131,18 +131,27 @@ class QueryGenerator:
     ) -> list[Query]:
 
         res = []
-
+        
         for i in self.query_indexes:
-            a = self.round_parameters.w * (self.round_parameters.g**i)  # type: ignore
+            a = self.curr_codeword.domain.values[i]  # type: ignore
             f_a = self.curr_codeword.get_index(i)
 
-            b = self.round_parameters.w * (self.round_parameters.g ** (self.round_parameters.size_of_group // 2 + i))  # type: ignore
+            b = self.curr_codeword.domain.values[self.round_parameters.size_of_group // 2 + i]  # type: ignore
             f_b = self.curr_codeword.get_index(
                 self.round_parameters.size_of_group // 2 + i
             )
 
-            c = alpha
+            c = a * a
             c_f_star = self.next_codeword.get_index(i)
+            
+            # CHECK COLINEARITY
+            two_inv = MainFieldElement(2) ** -1
+            a_inv = a ** -1
+            c_f_star_expected = two_inv * (
+                (f_a + f_b) + alpha * (f_a - f_b) * (a_inv)
+            )  # type: ignore
+            
+            print(f"c_f_star_expected: {c_f_star_expected}, c_f_star: {c_f_star}")
 
             proof_a = curr_merkle.get_sibling_path_to_root(i)
             proof_b = curr_merkle.get_sibling_path_to_root(
@@ -178,7 +187,7 @@ class Round:
         next_merkle_root = next_merkle.get_root().value
 
         query_generator = QueryGenerator(
-            alpha, next_round_parameters, curr_codeword, next_codeword
+            alpha.value, next_round_parameters, curr_codeword, next_codeword
         )
         queries = query_generator.generate_query(alpha, curr_merkle, next_merkle)
 
@@ -213,10 +222,9 @@ class Prover:
         curr_domain = None  # TODO: Update this once
 
         proof_stream.push(Round(curr_merkle.get_root().value, [], curr_round_params))
-        print(f"Iniitial Merkle root: {curr_merkle.get_root().value}")
         for _ in range(10):  # TODO: Check number of Rounds
             alpha = int.from_bytes(proof_stream.prover_communicating(), 'big') # TODO: Check proof_stream issues
-            print(alpha)
+            alpha = MainFieldElement(alpha)
             next_codeword = self.generate_next_codeword(
                 alpha, curr_codeword, curr_round_params.domain
             )
@@ -242,25 +250,23 @@ class Prover:
             
         proof_stream.push(curr_codeword.values)
 
-    def generate_next_codeword(self, alpha, curr_codeword, curr_domain: Domain):
-        N = len(curr_codeword)
-        generator = self.global_params.g ** (
-            self.global_params.size_of_group // len(curr_domain)
-        )
+    def generate_next_codeword(self, alpha: FieldElement, curr_codeword: ReedSolomonCode, curr_domain: Domain) -> ReedSolomonCode:
+        n = len(curr_codeword)
         two_inv = MainFieldElement(2) ** -1
-        alpha_omega_i = lambda i: MainFieldElement(alpha) * (generator**i)
-        next_codeword_val = [
-            two_inv
-            * (
-                (MainFieldElement(1) + alpha_omega_i(-i)) * curr_codeword[i]
-                + (MainFieldElement(1) - alpha_omega_i(-i)) * curr_codeword[N // 2 + i]
-            )
-            for i in range(N // 2)
-        ]
-
-        return ReedSolomonCode(
-            next_codeword_val, curr_codeword.max_degree // 2, curr_domain.sq_domain()
-        )
+        
+        next_codeword_val = []
+        for i in range(n // 2):
+            x = curr_domain.values[i]
+            f_x = curr_codeword[i]
+            f_minus_x = curr_codeword[i + n // 2]
+            
+            val = two_inv * ((f_x + f_minus_x) + alpha * (f_x - f_minus_x) * (x ** -1)) #type: ignore
+            next_codeword_val.append(val)
+        
+        next_domain = curr_domain.sq_domain()
+        next_max_degree = curr_codeword.max_degree // 2
+        
+        return ReedSolomonCode(next_codeword_val, next_max_degree, next_domain)
 
 
 class Verifier:
@@ -270,9 +276,60 @@ class Verifier:
         self.max_degree = max_degree
 
     def verify(self, proof_stream: ProofStream) -> bool:
-        pass
-     
+        rounds: list[Round] = [proof_stream.pull() for _ in range(self.global_params.num_rounds + 1)] # type: ignore
+        final_codeword_values: list = proof_stream.pull() #type: ignore
+        if not all(isinstance(r, Round) for r in rounds):
+            return False
 
+        # Phase 2: Re-derive all challenges.
+        alphas = []
+        challenge_ps = ProofStream()
+        for i in range(self.global_params.num_rounds):
+            challenge_ps.push(rounds[i])
+            alpha_bytes = challenge_ps.prover_communicating()
+            alpha = MainFieldElement(int.from_bytes(alpha_bytes))
+            alphas.append(alpha)
+            _ = challenge_ps.prover_communicating()
+        
+        for i in range(self.global_params.num_rounds):
+            prev_round = rounds[i]
+            curr_round = rounds[i+1]
+            alpha = alphas[i]
+            
+            if not curr_round.queries:
+                return False
+
+            for query in curr_round.queries:
+                proof_a_valid = MerkleTree.verify_path(query.f_a.value, query.proof_a, prev_round.merkle_root, self.global_params.combine_hash)
+                proof_b_valid = MerkleTree.verify_path(query.f_b.value, query.proof_b, prev_round.merkle_root, self.global_params.combine_hash)
+                proof_c_valid = MerkleTree.verify_path(query.c_f_star.value, query.proof_c, curr_round.merkle_root, self.global_params.combine_hash)
+                
+                print(proof_a_valid, proof_b_valid, proof_c_valid)
+
+                if not (proof_a_valid and proof_b_valid and proof_c_valid):
+                    return False
+
+                two_inv = MainFieldElement(2) ** -1
+                f_a, f_b, a = query.f_a, query.f_b, query.a
+                expected_c_f_star = two_inv * ((f_a + f_b) + alpha * (f_a - f_b) * (a ** -1))
+                print(f"Expected c_f_star: {expected_c_f_star}, Actual c_f_star: {query.c_f_star}")
+                if expected_c_f_star != query.c_f_star:
+                    return False
+        
+        final_domain_size = len(final_codeword_values)
+        if final_domain_size == 0:
+            return False
+
+        final_g = self.global_params.g ** (2 ** self.global_params.num_rounds)
+        final_domain = Domain.generate_domain(final_g, final_domain_size)
+        
+        final_poly = Polynomial.interpolate(final_domain.values, final_codeword_values)
+        expected_degree = self.max_degree // (2 ** self.global_params.num_rounds)
+        
+        if final_poly.deg() > expected_degree:
+            return False
+            
+        return True
 
 if __name__ == "__main__":
     import pickle
@@ -280,20 +337,12 @@ if __name__ == "__main__":
     state_machine = StateMachine(None, None, 10, 1) # type: ignore
     max_degree = 10
 
-    print("--- Prover starting proof generation ---")
     prover = Prover(state_machine)
     prover.max_degree = max_degree  # Set the degree bound
 
     proof_stream = ProofStream()
 
     prover.prove(proof_stream)
-    round_0 = proof_stream.pull()
-    print(f"Round 0 Merkle root: {round_0}")
-    print(int.from_bytes(shake_256(pickle.dumps([round_0])).digest(32)))
-    
-    
-    
-    print(f"Alpha gen {int.from_bytes(proof_stream.verifier_communicating(), 'big')}")
 
     proof_bytes = proof_stream.serialization()
     print(f"Total proof size: {len(proof_bytes)} bytes.")

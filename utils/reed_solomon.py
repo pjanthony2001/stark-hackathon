@@ -305,7 +305,7 @@ class Verifier:
 
 if __name__ == "__main__":
     state_machine = StateMachine(None, None, 10, 1) # type: ignore
-    # this proves to verifier that that the polynomial is X
+    # this proves to verifier that that the polynomial is X ** 2 + 1
     max_degree = 10
 
     prover = Prover(state_machine)

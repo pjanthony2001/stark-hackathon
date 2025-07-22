@@ -60,11 +60,8 @@ Plan to fix the project:
 - Add tests for each class
     - Add the test under if __name__ == "__main__" blocks
     - Fix as many of the typing issues as possible, if not ignore the type
+    - This is a big issue, that many methods are returning None, instead we should raise the exception at the end of the method to conserve the type. 
 - Run Pylint (you can find it as an extension), and fix all the formatting issues. Do not have to add docstring right now
-- Add the Verifier Protocol for FRI
-- Run one round of the FRI without any AIR, just from known polynomials, to confirm the protocol works
-    - We also want to time it, as very likely it will take ages for the field operations to run
-    - Since most operations are below the 2 ^ 119 threshold, we can add a check to the size before doing a modulo operation.
 
 - Construct the StateMachine properly to give us the polynomial representation of the computation
     - Figure out what the zerofier is

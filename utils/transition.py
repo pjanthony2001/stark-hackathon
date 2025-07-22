@@ -1,4 +1,4 @@
-from utils.state_machine_bis import StateMachine
+from utils.state_machine import StateMachine
 from utils.matrix import Matrix
 from utils.multivpolynomial import MultiVPolynomial
 from utils.field import Field, FieldElement

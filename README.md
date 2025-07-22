@@ -13,3 +13,21 @@ Il nous faut désormais montrer que cette fonction est un polynôme. Plus préci
 Il nous faut ensuite convaincre le vérifieur que les calculs ont bien été faits, qu'ils n'ont pas été falsifiés d'une étape à une autre. Cependant nous ne souhaitons pas lui donner tous nos résultats intermédiaires, on ne souhaite pas qu'il remonte à x. On évalue donc tous nos polynômes sur un certain nombre de points (huit fois plus que notre set de points initial, donc environ 8N points). Chaque polynôme est donc stocké sous forme de tableau de longueur environ 8N. Pour notre polynôme interpolateur ainsi que pour chaque polynôme de notre descente de degré, on a donc un tableau d'évaluations du polynôme et on en fait un arbre de Merkle : à l'aide d'une fonction de hachage connue de tous, on hache deux à deux les valeurs de notre tableau, et on itère jusqu'à obtenir une unique valeur, le sommet de l'arbre. Pour chacuns de nos arbres de Merkle, on envoie au vérifieur la valeur du sommet, cela lui garantit qu'on ne modifiera pas notre tableau de données par la suite. Ensuite, il nous demande, pour chacun de nos tableaux, la valeur en certains points. On la lui donne, ainsi que la partie de l'arbre de Merkle qui correspond. Cette partie de l'arbre lui permet de vérifier qu'il retrouve bien au sommet de l'arbre la valeur qu'on lui a communiquée, ce qui l'assure qu'on n'a pas modifié la valeur de notre tableau qu'on lui donne entre-temps. Le vérifieur choisit les points qu'il veut de sorte à pouvoir à chaque fois les recalculer via les points qu'on lui a donnés du tableau précédent. Il s'assure donc sur quelques points, jugés représentatifs car aléatoires, que les calculs ont été correctement faits d'une étape à l'autre. Le vérifieur est donc convaincu que les calculs n'ont pas été falsifiés, on lui montre qu'on a bien en notre possession un polynôme répondant aux exigences, cela permet de convaincre un vérifieur que l'on est bien en possession d'un x satisfaisant les propriétés énoncées au début, sans lui permettre de remonter à ce x.
 
 Lors de notre semaine de hackathon, nous avons d'abord cherché à comprendre les fondements mathématiques du sujet, par le biais d'articles, vidéos, discussions avec notre encadrant et entre nous. Ensuite, nous avons codé en Python les différentes parties du prouveur. Nous avons dû nous passer de bibliothèques standards comme Numpy car nous avons travaillé avec des éléments du corps Z/pZ et non avec des entiers.
+
+
+Plan to fix the project:
+
+- Add tests for each class
+    - Add the test under if __name__ == "__main__" blocks
+    - Fix as many of the typing issues as possible, if not ignore the type
+- Run Pylint (you can find it as an extension), and fix all the formatting issues. Do not have to add docstring right now
+- Add the Verifier Protocol for FRI
+- Run one round of the FRI without any AIR, just from known polynomials, to confirm the protocol works
+    - We also want to time it, as very likely it will take ages for the field operations to run
+    - Since most operations are below the 2 ^ 119 threshold, we can add a check to the size before doing a modulo operation.
+
+- Construct the StateMachine properly to give us the polynomial representation of the computation
+    - Figure out what the zerofier is
+    - Rewrite the class to give us the combined polynomial of a certain degree
+    - First do not use ZK just fix the coefficients for the polynomial until it works out
+- Write a main function as the entry point, the computation we are trying to simulate is already written in there

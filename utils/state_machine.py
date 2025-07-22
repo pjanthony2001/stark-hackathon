@@ -1,13 +1,12 @@
 from utils.transition import TransitionConstraint
 from utils.boundary import BoundaryConstraint
 from utils.matrix import Matrix
-from utils.reed_solomon import Domain
+from utils.domain import Domain
 from utils.polynomial import Polynomial
 from utils.field import Field
 class StateMachine():
     
     def __init__(self, transition_constraint: TransitionConstraint, boundary_constraint: BoundaryConstraint, T: int, w: int):
-        assert self.boundary_constraint.length == w
 
         self.transition = transition_constraint
         self.boundary_constraint = boundary_constraint

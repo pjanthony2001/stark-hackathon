@@ -1,5 +1,5 @@
 from utils.field import FieldElement, Field
-from utils.reed_solomon import Domain
+from utils.domain import Domain
 class Polynomial :
     def __init__(self, coef : 'list[FieldElement]'):
         if len(coef) == 0 :

@@ -1,5 +1,5 @@
 from utils.field import FieldElement, Field
-from utils.polynomial import Polynomial
+from utils.polynomial import Polynomial, PolynomialException
 
 class MultiVPolynomial :
 
@@ -7,24 +7,24 @@ class MultiVPolynomial :
     
     def __init__(self, coef : 'dict[tuple]') : # type: ignore
         if len(coef.keys()) == 0 :
-            raise Exception('Multivariate olynomials must have at least 1 coefficient.')
+            raise PolynomialException('Multivariate olynomials must have at least 1 coefficient.')
         self.exp = list(coef.keys())
         for exp in self.exp :
             for alpha in exp :
                 if not isinstance(alpha, int) :
-                    raise Exception('Exponents must be integers.')
+                    raise PolynomialException('Exponents must be integers.')
         if not FieldElement.field_eq([coef[exp] for exp in self.exp]) :
-            raise Exception('Coefficients of the polynomial must belong to the same field.')
+            raise PolynomialException('Coefficients of the polynomial must belong to the same field.')
         self.field = coef[self.exp[0]].field
         self.var = len(self.exp[0])
         if False in [len(exp_list) == self.var for exp_list in self.exp] :
-            raise Exception('The keys of the expomials dictionary must have the same length.')
+            raise PolynomialException('The keys of the expomials dictionary must have the same length.')
         self.coef = coef
 
     @staticmethod
     def synchro(a : 'MultiVPolynomial', b : 'MultiVPolynomial') :
         if a.field != b.field :
-            raise Exception('It makes no sense to synchronise two polynomials with coefficients from different fields.')
+            raise PolynomialException('It makes no sense to synchronise two polynomials with coefficients from different fields.')
         a.monom_recalibration()
         b.monom_recalibration()
         a.var_recalibration()
@@ -44,16 +44,16 @@ class MultiVPolynomial :
 
     @staticmethod
     def sum_list(l : 'list[int]') -> 'int' :
-        sum = 0
+        sum_ = 0
         for k in l :
             if not isinstance(k, int) :
                 raise TypeError('This list contains non integer elements.')
-            sum += k
-        return sum
+            sum_ += k
+        return sum_
 
     def monom_recalibration(self) -> None :
         if self.is_zero() :
-            self = MultiVPolynomial.zero(self.field, 1)
+            self = MultiVPolynomial.zero(self.field, 1) # TODO: rework this to change the  object attributes instead of self assignment
         else :
             for exp in self.exp :
                 if self.coef[exp].value == 0 :
@@ -85,12 +85,12 @@ class MultiVPolynomial :
     @staticmethod
     def monom_str(exp : 'tuple[int]', coef : 'FieldElement') -> 'str' :
         monom = ''
-        for i in range(len(exp)) :
+        for i, exponent in enumerate(exp) :
             var = ''
-            if exp[i] != 0 :
+            if exponent != 0 :
                 var += f'{MultiVPolynomial.ALPHABET[i]}'
-                if exp[i] != 1 :
-                    var = '(' + var + f'^{exp[i]})'
+                if exponent != 1 :
+                    var = '(' + var + f'^{exponent})'
             monom += var
         if coef.value == 1 :
             return monom
@@ -131,14 +131,14 @@ class MultiVPolynomial :
             raise TypeError('A multivariate polynomial can only be summed with multivariate polynomials.')
         MultiVPolynomial.synchro(self, b)
         if b.field != self.field :
-            raise Exception('Impossible to sum multivariate polynomials linked to different fields.')
-        sum = self
+            raise PolynomialException('Impossible to sum multivariate polynomials linked to different fields.')
+        sum_ = self
         for exp in b.exp :
-            if exp in sum.exp :
-                sum.coef[exp] += b.coef[exp]
+            if exp in sum_.exp :
+                sum_.coef[exp] += b.coef[exp]
             else :
-                sum.coef[exp] = b.coef[exp]
-        return sum
+                sum_.coef[exp] = b.coef[exp]
+        return sum_
     
     def __radd__(self, b : 'FieldElement|Polynomial') -> 'MultiVPolynomial' :
         return self.__add__(b)
@@ -167,7 +167,7 @@ class MultiVPolynomial :
         print(self.var)
         print(b.var)
         if b.field != self.field :
-            raise Exception('Impossible to multiply multivariate polynomials linked to different fields.')
+            raise PolynomialException('Impossible to multiply multivariate polynomials linked to different fields.')
         prod = MultiVPolynomial.zero(self.field, self.var)
         for exp_b in b.exp :
             for exp_self in self.exp :
@@ -199,7 +199,7 @@ class MultiVPolynomial :
     @staticmethod
     def zero(field : 'Field', var : 'int') -> 'MultiVPolynomial' :
         if var <= 0 :
-            raise Exception('Zero multivariable polynomial mustt have at least 1 variable.')
+            raise PolynomialException('Zero multivariable polynomial mustt have at least 1 variable.')
         return MultiVPolynomial({tuple(var*[0]) : FieldElement(field, 0)})
     
     def is_zero(self) -> 'bool' :
@@ -218,17 +218,17 @@ class MultiVPolynomial :
     def interpolate(x : 'list[list[FieldElement]]', y : 'list[FieldElement]') :
         n = len(x)
         if n == 0 :
-            raise Exception('Impossible to interpolate from an empty list of abscissas.')
+            raise PolynomialException('Impossible to interpolate from an empty list of abscissas.')
         if len(y) != n :
-            raise Exception('Abscissas and ordinates lists must have the same length.')
+            raise PolynomialException('Abscissas and ordinates lists must have the same length.')
         list_x = []
         for var_list in x :
             list_x += var_list 
         if not FieldElement.field_eq(list_x + y) :
-            raise Exception('Abscissas and ordinates lists must belong to the same field.')
+            raise PolynomialException('Abscissas and ordinates lists must belong to the same field.')
         var = len(x[0])
         if var == 0 :
-            raise Exception('Abscissas\' list contains only empty lists : impossible to interpolate a no-variate polyomial.') 
+            raise PolynomialException('Abscissas\' list contains only empty lists : impossible to interpolate a no-variate polyomial.') 
         field = x[0][0].field
         P = MultiVPolynomial.zero(field, var)
         for i in range(n) :
@@ -243,7 +243,7 @@ class MultiVPolynomial :
     def monovariation(self, polys : 'list[Polynomial]') -> 'Polynomial':
         self.actu()
         if len(polys) != self.var - 1 :
-            raise Exception('Not enough polynomials given.')
+            raise PolynomialException('Not enough polynomials given.')
         monovariate = Polynomial.zero(self.field)
         for exp in self.exp :
             monom = Polynomial([self.coef[exp]])*(Polynomial.X(self.field)**exp[0])

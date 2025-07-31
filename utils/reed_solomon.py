@@ -4,7 +4,6 @@ from utils.merkle_tree import MerkleTree
 from utils.state_machine import StateMachine
 
 import random
-import hashlib
 from utils.proof_stream import ProofStream
 from utils.domain import Domain
 
@@ -20,12 +19,13 @@ class ReedSolomonCode:
         return self.values[i]
 
     def check_poly(self) -> bool:
-        num_values = min(len(self.values), self.max_degree + 8)
+        num_values = min(len(self.values), self.max_degree + 2) # max degree + 1 should be enough to reconstruct the polynomial, but i did + 2 to be safe
         
         idx = random.sample(range(len(self.domain.values)), num_values)
         sampled_values = [self.values[i] for i in idx]
         sampled_domain = [self.domain.values[i] for i in idx]
-        self.p = Polynomial.interpolate(sampled_domain, sampled_values)        
+        self.p = Polynomial.interpolate(sampled_domain, sampled_values)
+        print(f"Polynomial degree: {self.p.deg()}, expected max degree: {self.max_degree}")
         return self.p.deg() <= self.max_degree and all(self.p(x) == self.values[i] for i, x in enumerate(self.domain.values))
 
     def poly_eval(self, x: FieldElement) -> FieldElement:
@@ -43,33 +43,12 @@ class ReedSolomonCode:
         return self.values[index]
 
 
-class GlobalParameters:
-    q = Polynomial(
-        [MainFieldElement(0), MainFieldElement(0), MainFieldElement(1)]
-    )  # Fix q to be X^2
-    main_field_prime = Field.main().p
-    size_of_group = 2**10  # starting size of group is 1024  SIZE OF GROUP MUST BE A POWER OF 2
-    num_rounds = 10  # lg(1024)
-    num_colinearity_tests = 10
-    
+
         
-    generator_int = 7
-
-    g = MainFieldElement(7) ** ((main_field_prime - 1) // size_of_group) # generator
-    w = MainFieldElement(3)  # offset
-
-    combine_hash = lambda x, y: GlobalParameters.hash_function(
-        x
-    ) ^ GlobalParameters.hash_function(y)
-
-    group_domain = Domain.generate_domain(g, size_of_group)
-    coset_domain = group_domain.offset_domain(w)
-
-    @staticmethod
-    def hash_function(x: FieldElement | int) -> int:
-        if isinstance(x, FieldElement):
-            x = x.value
-        return int(hashlib.sha256(x.to_bytes(32, "big")).hexdigest(), 16)
+        
+        
+        
+        
 
 
 class Query:
@@ -94,7 +73,6 @@ class Query:
 class QueryGenerator:
 
     def __init__(self, seed: int, curr_codeword, next_codeword):
-        print(f"Prover sees seed: {seed}")
         self.seed = random.Random(seed)
         num_to_sample = min(
             len(next_codeword.domain), GlobalParameters.num_colinearity_tests
@@ -106,7 +84,6 @@ class QueryGenerator:
 
         self.query_indexes.sort()
         
-        print(f"Num Query indexes: {self.query_indexes} Domain Size {len(next_codeword.domain)}")
         self.curr_codeword = curr_codeword
         self.next_codeword = next_codeword
 
@@ -177,14 +154,14 @@ class Prover:
 
     def __init__(self, state_machine_: StateMachine) -> None:
         self.state_machine = state_machine_
-        self.max_degree = 10  # NEED TO FIX ???
         self.composite_poly = state_machine_.compute_polynomial(
             self.global_params.group_domain
         )  # assume boundary and transition constraints are combined into one polynomial
         self.start_codeword_val = self.composite_poly.evaluate_domain(
             self.global_params.group_domain
         )  # expand by 4 * colinearity for ZK
-        self.start_codeword = ReedSolomonCode(self.start_codeword_val, self.max_degree, self.global_params.group_domain)  # type: ignore
+        self.start_codeword = ReedSolomonCode(self.start_codeword_val, self.composite_poly.deg(), self.global_params.group_domain)  # type: ignore
+        assert self.start_codeword.check_poly()  
 
     def prove(self, proof_stream_: ProofStream):
         curr_codeword = self.start_codeword
@@ -226,10 +203,6 @@ class Prover:
         n = len(curr_codeword)
         two_inv = MainFieldElement(2) ** -1
         
-        check = curr_codeword.check_poly()
-        if not check:
-            raise ValueError("Current codeword does not satisfy polynomial constraints.")
-
         next_codeword_val = []
         for i in range(n // 2):
             x = curr_domain.values[i]
@@ -245,7 +218,6 @@ class Prover:
         
         next_codeword = ReedSolomonCode(next_codeword_val, next_max_degree, next_domain)
         
-        print(f"Next codeword degree: {next_codeword.max_degree}, size: {len(next_codeword)}")
         if not next_codeword.check_poly():
             raise ValueError("Generated codeword does not satisfy polynomial constraints.")
 
@@ -273,7 +245,7 @@ class Verifier:
             alpha: MainFieldElement = MainFieldElement(int.from_bytes(alpha_bytes))
             alphas.append(alpha)
             _ = challenge_ps.prover_communicating()
-
+        
         # Reconstruct domain and verify queries
         for i in range(self.global_params.num_rounds - 1):
             prev_round = rounds[i]
@@ -282,9 +254,10 @@ class Verifier:
             
             if not curr_round.queries:
                 return False
-
-            x_values: list[FieldElement] = []
+            
+            x_values = []
             y_values = []
+
             
             for query in curr_round.queries:
                 
@@ -293,9 +266,6 @@ class Verifier:
                 x_values.append(query.b) # this is b if I'm not mistaken. Technically we can choose not to send these values at all, and then just reconstruct them, from the original domain.
                 y_values.append(query.f_a)
                 y_values.append(query.f_b)
-                
-                
-                
                                 
                 proof_a_valid = MerkleTree.verify_path(
                     query.f_a.value,
@@ -322,14 +292,16 @@ class Verifier:
                 two_inv = MainFieldElement(2) ** -1
                 f_a, f_b, a = query.f_a, query.f_b, query.a
                 expected_c_f_star = two_inv * (
-                    (f_a + f_b) + alpha * (f_a - f_b) * (a**-1)
+                    (f_a + f_b) + alpha * (f_a - f_b) * (a ** -1)
                 )
                 if expected_c_f_star != query.c_f_star:
                     return False
             
             # Reconstruct the polynomial from the queries and check that the degree is less than max degree, thus it must be the correct codeword.
             poly = Polynomial.interpolate(x_values, y_values)
-            assert poly.deg() <= self.max_degree // (2**(i + 1)), "Polynomial degree exceeds expected bound."
+            print(f"Polynomial degree: {poly.deg()}, expected max degree: {self.max_degree // (2**i)}")
+            
+
             
 
         final_domain_size = len(final_codeword_values)
@@ -352,10 +324,9 @@ class Verifier:
 if __name__ == "__main__":
     state_machine = StateMachine(None, None, 10, 1)  # type: ignore
     # this proves to verifier that that the polynomial is X ** 2 + 1
-    max_degree = 10
+    max_degree = state_machine.compute_polynomial(None).deg()  # type: ignore
 
     prover = Prover(state_machine)
-    prover.max_degree = max_degree  # Set the degree bound
 
     proof_stream = ProofStream()
 

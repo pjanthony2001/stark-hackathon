@@ -4,7 +4,7 @@ class Matrix():
     
     def __init__(self, m: int, n: int, values: list[FieldElement]):
         assert len(values) == m * n
-        assert FieldElement.field_eq(self.values)
+        assert FieldElement.field_eq(values)
 
         self.dimensions = (m, n)
         self.rows = m
@@ -50,3 +50,19 @@ class Matrix():
             for i in range(self.rows):
                 values.append( self.values[i * self.columns + j] )
         return Matrix(self.columns, self.rows, values)
+    
+    def is_square(self):
+        return self.rows == self.columns
+    
+    
+class Vector(Matrix):
+    
+    def __init__(self, m: int, values: list[FieldElement]):
+        assert len(values) == m
+        super().__init__(m, 1, values)
+    
+    def __str__(self):
+        return "[" + "".join([f"{row[0]}," for row in self.matrix[:-1]] + [f"{self.matrix[-1][0]}"]) + "]"
+    
+    def __mul__(self, scalar: FieldElement):
+        return Vector(self.rows, [scalar * x for x in self.values])

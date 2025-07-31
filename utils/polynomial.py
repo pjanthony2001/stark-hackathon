@@ -1,4 +1,4 @@
-from utils.field import FieldElement, Field
+from utils.field import FieldElement, Field, MainFieldElement
 from utils.domain import Domain
 
 
@@ -158,7 +158,7 @@ class Polynomial:
                 )
             comp = Polynomial.zero(self.field)
             for index, coef in enumerate(self.coef):
-                comp = comp + coef * (arg**index)
+                comp = comp + (arg**index) * coef
             return comp
         if isinstance(arg, FieldElement):
             if self.field != arg.field:
@@ -211,3 +211,31 @@ class Polynomial:
                     )
             poly += product
         return poly
+    
+    @staticmethod
+    def divide(numerator: "Polynomial", denominator: "Polynomial") -> tuple["Polynomial", "Polynomial"]:
+        # Should only use for MainFieldElement
+        if denominator.deg() == -1:
+            raise PolynomialException("Cannot divide by zero polynomial")
+        if numerator.deg() < denominator.deg():
+            return (Polynomial([MainFieldElement(0)]), numerator)
+    
+        remainder = Polynomial(numerator.coef.copy())
+        quotient_coefficients: list[FieldElement] = [MainFieldElement(0) for _ in range(numerator.deg() - denominator.deg() + 1)]
+        for _ in range(numerator.deg() - denominator.deg() + 1):
+            if remainder.deg() < denominator.deg():
+                break
+            coefficient = remainder.coef[remainder.deg()] / denominator.coef[denominator.deg()]
+            shift = remainder.deg() - denominator.deg()
+            subtractee = Polynomial([MainFieldElement(0)] * shift + [coefficient]) * denominator
+            quotient_coefficients[shift] = coefficient
+            remainder = remainder - subtractee
+        quotient = Polynomial(quotient_coefficients)
+        return quotient, remainder
+    
+    def __mod__(self, other: object):
+        if not isinstance(other, Polynomial):
+            raise PolynomialException(f"only take modulo with another poly")
+        
+        _, rem = Polynomial.divide(self, other) # type: ignore
+        return rem

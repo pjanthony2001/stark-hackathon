@@ -1,3 +1,4 @@
+
 class FieldException(Exception):
     def __init__(self, message: str):
         super().__init__(message)
@@ -52,7 +53,7 @@ class FieldElement:
 
 
     def __truediv__(self, b: "FieldElement") -> "FieldElement":
-        return self.field.truediv(self)  # type: ignore
+        return self.field.truediv(self, b)  # type: ignore
 
 
     def __neg__(self) -> "FieldElement":
